@@ -40,6 +40,7 @@
     padding:.6vh 1vw;border-radius:99px;white-space:nowrap;flex:0 0 auto;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);
   }
+  .sub-nombre{font-size:2.4vh;color:#8b949e;margin-top:.4vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fila2{display:flex;align-items:flex-end;gap:1.6vw;margin-top:1.2vh}
   .dato{display:flex;flex-direction:column}
   .dato .lbl{font-size:1.6vh;color:#8b949e;text-transform:uppercase;letter-spacing:.06em}
@@ -51,6 +52,12 @@
     margin-top:auto;padding-top:1.2vh;font-size:2.7vh;line-height:1.3;color:#c9d1d9;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
   }
+  /* Tarjeta del marcador "unidades sin accidente" (analogía a los días sin accidentes). */
+  .card.racha .uni{font-size:8.4vh;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .card.racha .uni small{font-size:2.4vh;font-weight:600;color:#8b949e;margin-left:.6vw}
+  .card.racha .pie{margin-top:auto;padding-top:1vh;font-size:2.1vh;color:#8b949e;line-height:1.35}
+  .card.racha .pie b{color:#c9d1d9}
+  .trofeo{position:absolute;top:1.2vh;right:1.2vw;font-size:3.4vh}
   .vacio{
     grid-column:1/-1;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
@@ -70,7 +77,7 @@
 <body>
   <header>
     <div class="titulo">
-      <h1>🛠️ MATRICERÍA</h1>
+      <h1 id="titulo">🛠️ MATRICERÍA</h1>
       <span class="sub" id="resumen">cargando…</span>
     </div>
     <div class="reloj"><span id="hora">--:--</span><span class="fecha" id="fecha"></span></div>
@@ -101,11 +108,12 @@ const SUPABASE_URL = 'https://hrxfctzncixxqmpfhskv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BqpAgZH6ty-9wft10_YMhw_0rcIPuWT'; // clave PÚBLICA de solo lectura
 
 const qs         = new URLSearchParams(location.search);
-const num        = (k, def) => { const v = parseInt(qs.get(k), 10); return Number.isFinite(v) && v > 0 ? v : def; };
-const POR_PANT   = num('porPantalla', 6);
-const REFRESCO   = num('refresco', 30) * 1000;
-const PAGINA     = num('pagina', 15) * 1000;
-const COLUMNAS   = num('columnas', 3);
+const num        = (k, def) => { const v = parseInt(qs.get(k), 10); return Number.isFinite(v) && v >= 0 ? v : def; };
+const POR_PANT   = Math.max(1, num('porPantalla', 6));
+const REFRESCO   = Math.max(5, num('refresco', 30)) * 1000;
+const PAGINA     = Math.max(5, num('pagina', 15)) * 1000;
+const COLUMNAS   = Math.max(1, num('columnas', 3));
+const RACHAS     = num('rachas', 12);   // cuántas matrices entran al marcador (0 = apagarlo)
 
 const ESTADOS = {
   ingresada:  { txt:'Ingresada',  c:'#58a6ff', cb:'#132c4d' },
@@ -113,35 +121,46 @@ const ESTADOS = {
   esperando:  { txt:'Esperando',  c:'#ff7b72', cb:'#3d1d1b' },
   terminada:  { txt:'Terminada',  c:'#3fb950', cb:'#12301a' }
 };
+const ACCIDENTE = { RM:'se rompió', PM:'paró', INGRESO:'entró a matricería' };
 
-let datos = [];        // última respuesta buena
+let taller = [];       // matrices adentro del taller (Planify)
+let rachas = [];       // unidades sin accidente por matriz (GP2.matriz_racha)
 let pagina = 0;
-let ultimaOk = null;   // cuándo trajo datos por última vez
+let ultimaOk = null;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fecha = d => { if (!d) return '—'; const [y,m,dd] = String(d).split('-'); return dd+'/'+m; };
+const miles = n => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
 
-async function traer(){
-  // estado=neq.terminada: el monitor muestra lo que está EN el taller. Cuando la
-  // matriz se termina (o se cierra su tarea en Planify) desaparece sola de la TV.
-  const url = SUPABASE_URL + '/rest/v1/v_matriceria_monitor'
-            + '?select=*&estado=neq.terminada&order=dias_demora.desc,fecha_ingreso.asc';
-  const r = await fetch(url, { headers:{ apikey:SUPABASE_KEY, 'Accept-Profile':'planify' }, cache:'no-store' });
+async function pedir(path, perfil){
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path,
+    { headers:{ apikey:SUPABASE_KEY, 'Accept-Profile':perfil }, cache:'no-store' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
 }
 
 async function actualizar(){
   try{
-    const nuevos = await traer();
-    // Sólo piso los datos si la respuesta vino bien: un corte de red no tiene que
+    // estado=neq.terminada: el monitor muestra lo que está EN el taller. Cuando la matriz
+    // se termina (o se cierra su tarea en Planify) desaparece sola de la TV.
+    const t = await pedir('v_matriceria_monitor?select=*&estado=neq.terminada'
+                        + '&order=dias_demora.desc,fecha_ingreso.asc', 'planify');
+    // Marcador: unidades fabricadas desde el último accidente de cada matriz. Lo calcula
+    // la base (public.gp2_matriz_racha_sync); acá sólo se lee la tabla ya resuelta.
+    let r = [];
+    if (RACHAS > 0){
+      r = await pedir('matriz_racha?select=matriz,descripcion,unidades,golpes,accidentes,record,'
+                    + 'es_record,ultimo_accidente,ultimo_tipo&unidades=gt.0'
+                    + '&order=unidades.desc&limit=' + RACHAS, 'GP2');
+    }
+    // Sólo se pisa lo que se ve si la respuesta vino bien: un corte de red no tiene que
     // dejar la TV en blanco, se sigue viendo lo último que se supo.
-    datos = Array.isArray(nuevos) ? nuevos : [];
+    taller = Array.isArray(t) ? t : [];
+    rachas = Array.isArray(r) ? r : [];
     ultimaOk = new Date();
     $('estadoConn').textContent = 'En línea · ' + ultimaOk.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
     $('estadoConn').className = '';
-    if (pagina * POR_PANT >= datos.length) pagina = 0;
     pintar();
   }catch(e){
     $('estadoConn').textContent = 'SIN CONEXIÓN' + (ultimaOk ? ' · último dato ' + ultimaOk.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '');
@@ -149,7 +168,17 @@ async function actualizar(){
   }
 }
 
-function tarjeta(m){
+// Las pantallas que rota la TV: primero las matrices que están en el taller, después el
+// marcador de unidades sin accidente. Si no hay nada de una de las dos, esa no ocupa lugar.
+function pantallas(){
+  const ps = [];
+  for (let i = 0; i < taller.length; i += POR_PANT) ps.push({ tipo:'taller', items: taller.slice(i, i+POR_PANT) });
+  if (!ps.length) ps.push({ tipo:'taller', items: [] });
+  for (let i = 0; i < rachas.length; i += POR_PANT) ps.push({ tipo:'racha', items: rachas.slice(i, i+POR_PANT) });
+  return ps;
+}
+
+function tarjetaTaller(m){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
   const clase = d >= 7 ? 'alerta' : (d >= 3 ? 'aviso' : '');
@@ -158,11 +187,31 @@ function tarjeta(m){
       <div class="nro">${esc(m.numero_matriz)}</div>
       <div class="estado">${e.txt}</div>
     </div>
+    ${m.nombre_matriz ? `<div class="sub-nombre">${esc(m.nombre_matriz)}</div>` : ''}
     <div class="fila2">
       <div class="dato"><span class="lbl">Ingresó</span><span class="val">${fecha(m.fecha_ingreso)}</span></div>
       <div class="dato dias ${clase}"><span class="lbl">Demora</span><span class="val">${d} d</span></div>
     </div>
     <div class="motivo">${esc(m.motivo)}</div>
+  </div>`;
+}
+
+function tarjetaRacha(r){
+  const dias = r.ultimo_accidente
+    ? Math.floor((Date.now() - new Date(r.ultimo_accidente).getTime()) / 86400000) : null;
+  const que = ACCIDENTE[r.ultimo_tipo] || 'se cortó';
+  const pie = r.accidentes
+    ? `Desde que <b>${que}</b>, hace <b>${dias} día${dias === 1 ? '' : 's'}</b>` +
+      (Number(r.record) > 0 ? ` · récord <b>${miles(r.record)}</b>` : '')
+    : 'Nunca tuvo una rotura registrada';
+  return `<div class="card racha" style="--c:${r.es_record ? '#3fb950' : '#58a6ff'};--cb:#12301a">
+    ${r.es_record ? '<span class="trofeo" title="Mejor racha de su historia">🏆</span>' : ''}
+    <div class="fila1">
+      <div class="nro">${esc(r.matriz)}</div>
+    </div>
+    ${r.descripcion ? `<div class="sub-nombre">${esc(r.descripcion)}</div>` : ''}
+    <div class="uni">${miles(r.unidades)}<small>uni${r.golpes ? ' · ' + miles(r.golpes) + ' golpes' : ''}</small></div>
+    <div class="pie">${pie}</div>
   </div>`;
 }
 
@@ -172,23 +221,27 @@ function pintar(){
   grilla.style.gridTemplateColumns = `repeat(${COLUMNAS},1fr)`;
   grilla.style.gridTemplateRows    = `repeat(${filas},1fr)`;
 
-  const paginas = Math.max(1, Math.ceil(datos.length / POR_PANT));
-  if (pagina >= paginas) pagina = 0;
-  const trozo = datos.slice(pagina * POR_PANT, pagina * POR_PANT + POR_PANT);
+  const ps = pantallas();
+  if (pagina >= ps.length) pagina = 0;
+  const p = ps[pagina];
 
-  $('resumen').textContent = datos.length
-    ? datos.length + (datos.length === 1 ? ' matriz en el taller' : ' matrices en el taller')
-    : 'sin matrices en el taller';
+  const esRacha = p.tipo === 'racha';
+  $('titulo').textContent = esRacha ? '🏁 UNIDADES SIN ACCIDENTE' : '🛠️ MATRICERÍA';
+  $('resumen').textContent = esRacha
+    ? 'unidades fabricadas desde la última rotura de cada matriz'
+    : (taller.length
+        ? taller.length + (taller.length === 1 ? ' matriz en el taller' : ' matrices en el taller')
+        : 'sin matrices en el taller');
 
-  grilla.innerHTML = trozo.length
-    ? trozo.map(tarjeta).join('')
+  grilla.innerHTML = p.items.length
+    ? p.items.map(esRacha ? tarjetaRacha : tarjetaTaller).join('')
     : '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
 
-  $('puntos').innerHTML = paginas > 1
-    ? Array.from({length:paginas}, (_,i) => `<i class="${i===pagina?'on':''}"></i>`).join('')
+  $('puntos').innerHTML = ps.length > 1
+    ? ps.map((x,i) => `<i class="${i===pagina?'on':''}"></i>`).join('')
     : '';
-  $('pie').textContent = paginas > 1
-    ? `Pantalla ${pagina+1} de ${paginas} · se carga desde Planify → Ingreso matrices`
+  $('pie').textContent = ps.length > 1
+    ? `Pantalla ${pagina+1} de ${ps.length} · se carga desde Planify → Ingreso matrices`
     : 'Se carga desde Planify → Ingreso matrices';
 }
 
@@ -200,10 +253,10 @@ function reloj(){
 
 reloj();              setInterval(reloj, 10000);
 actualizar();         setInterval(actualizar, REFRESCO);
-// Rotación: sólo tiene sentido si hay más matrices de las que entran en pantalla.
+// Rotación entre pantallas (las del taller y las del marcador).
 setInterval(() => {
-  const paginas = Math.ceil(datos.length / POR_PANT);
-  if (paginas > 1){ pagina = (pagina + 1) % paginas; pintar(); }
+  const ps = pantallas();
+  if (ps.length > 1){ pagina = (pagina + 1) % ps.length; pintar(); }
 }, PAGINA);
 </script>
 </body>
