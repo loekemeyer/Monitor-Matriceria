@@ -1,15 +1,12 @@
 # Monitor Matricería
 
-TV del taller. Rota entre dos tableros:
+TV del taller: **un solo tablero fijo** con las matrices que están en matricería —
+**número, nombre, día de ingreso, días de demora, motivo y estado**. Entran 6 por pantalla
+en una TV de 32" a 1920×1080; si hay más de 6, rota entre las pantallas del taller.
 
-1. **Matricería** — las matrices que están en el taller: **número, nombre, día de ingreso,
-   días de demora, motivo y estado**.
-2. **Unidades sin accidente** — la analogía del cartel de *días sin accidentes*, pero en
-   piezas: cuántas lleva fabricadas cada matriz **desde su último accidente** (una rotura
-   RM, un pare de matriz PM, o el ingreso a matricería cargado en Planify), con el récord
-   histórico y 🏆 en la que está en su mejor racha.
-
-Entran 6 por pantalla en una TV de 32" a 1920×1080; si hay más, rota solo.
+> El contador de **unidades sin accidente** por matriz **no va acá** (Thomas, 16/09/2026:
+> *"en matricería solamente un monitor fijo de las matrices que hay en el taller"*). Ese
+> dato vive sólo en **Gestión Productiva 2.0 → Producción → Unidades sin Accidente**.
 
 > El repo se llamaba `Monitor-Virgilio` por un error al crearlo; el 16/09/2026 se renombró a
 > **`Monitor-Matriceria`**. GitHub redirige la URL vieja, así que los clones existentes siguen
@@ -46,7 +43,6 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 | `columnas` | 3 | Columnas de la grilla |
 | `refresco` | 30 | Segundos entre consultas |
 | `pagina` | 15 | Segundos por pantalla cuando hay más de las que entran |
-| `rachas` | 12 | Cuántas matrices entran al tablero de unidades sin accidente (`0` lo apaga) |
 
 ## Colores
 
@@ -58,10 +54,6 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 | Terminada | — | Sale de la TV (y se cierra la tarea en Planify) |
 
 La **demora** se pinta amarilla a los 3 días y roja a los 7.
-
-En el tablero de unidades sin accidente, el marco verde y el 🏆 marcan la matriz que está en
-la mejor racha de su historia. El contador lo calcula la base (`GP2.matriz_racha`), no la TV:
-lo actualizan solos el registro de producción y los ingresos que cargan los matriceros.
 
 ## Si la TV muestra "SIN CONEXIÓN"
 

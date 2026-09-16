@@ -6,15 +6,16 @@
 
 ## Qué es
 
-Un **visualizador** para la TV de 32" del taller. Rota entre dos tableros:
+Un **visualizador** para la TV de 32" del taller: **un solo tablero fijo** con las matrices
+que están en matricería (número, nombre, día de ingreso, días de demora, motivo y estado).
+Sale de `planify.v_matriceria_monitor`.
 
-1. **Matricería**: las matrices que están en el taller (número, nombre, día de ingreso, días
-   de demora, motivo y estado). Sale de `planify.v_matriceria_monitor`.
-2. **Unidades sin accidente**: la analogía del cartel de *días sin accidentes*, en piezas —
-   cuántas lleva fabricadas cada matriz desde su último accidente, con el récord histórico.
-   Sale de `GP2.matriz_racha` (otro `Accept-Profile`, misma clave y también solo lectura).
-   La calcula `public.gp2_matriz_racha_sync()`; cortan la racha una rotura (RM), un pare de
-   matriz (PM) del registro de producción y el ingreso a matricería cargado en Planify.
+⚠ **Acá NO va el contador de "unidades sin accidente".** Estuvo como segundo tablero unas
+horas del 16/09/2026 y el dueño lo sacó ese mismo día: *"eso no va acá… en matricería
+solamente un monitor fijo de las matrices que hay en el taller"*. El dato existe y se
+mantiene solo (`GP2.matriz_racha`), pero se mira **únicamente** en Gestión Productiva 2.0 →
+Producción → *Unidades sin Accidente*. Si alguien pide "poner las unidades en la TV", es una
+decisión que ya se tomó al revés: preguntar antes de volver a agregarlo.
 
 **No carga NI modifica nada.** Los datos los cargan Martín Pregelj (employee_id 15) y
 Martín Cornejo (34) desde Planify → botón **"Ingreso matrices"**, que escribe en
@@ -30,8 +31,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 
 - **Un solo archivo**: `index.html`. Sin build, sin npm, sin dependencias. Se abre con
   doble clic (`file://`) o publicado por GitHub Pages; anda igual.
-- Pide los datos cada **30 s** (`fetch` a PostgREST; el header `Accept-Profile` elige el
-  schema: `planify` para el taller, `GP2` para el marcador).
+- Pide los datos cada **30 s** (`fetch` a PostgREST con el header `Accept-Profile: planify`).
 - Entran **6 matrices por pantalla** (grilla 3×2, pensada para 1920×1080 a varios metros).
   Si hay más de 6, **rota** de pantalla cada 15 s con los puntitos abajo.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
@@ -49,7 +49,6 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `columnas` | 3 | Columnas de la grilla |
 | `refresco` | 30 | Segundos entre consultas a Supabase |
 | `pagina` | 15 | Segundos que dura cada pantalla cuando hay más de las que entran |
-| `rachas` | 12 | Cuántas matrices entran al marcador de unidades sin accidente (`0` lo apaga) |
 
 Ejemplo para una TV vertical: `index.html?columnas=2&porPantalla=6`.
 
@@ -65,8 +64,9 @@ la lista `MAT_ESTADOS` de Planify (`src/index.html`) y el objeto `ESTADOS` de es
 Repo **`loekemeyer/Planify`**: el módulo "Ingreso matrices" (`src/index.html`,
 `supabase.js`, `main.js`, `preload.js`) y la migración
 `supabase/20260916_matriceria_ingresos.sql`, que es la fuente de verdad del schema.
-Repo **`loekemeyer/Gestion-Productiva-2.0`**: la pantalla hermana de este marcador
-(`Produccion/UnidadesSinAccidente/`) y el detalle de `GP2.matriz_racha`.
+Repo **`loekemeyer/Gestion-Productiva-2.0`**: la pantalla *Unidades sin Accidente*
+(`Produccion/UnidadesSinAccidente/`) y el detalle de `GP2.matriz_racha` — ese dato vive
+allá, no acá.
 Si cambia el nombre de la vista o de una columna allá, este monitor deja de ver las
 matrices: son dos repos, pero un solo contrato.
 
