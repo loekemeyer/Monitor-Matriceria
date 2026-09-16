@@ -18,7 +18,7 @@ Producción → *Unidades sin Accidente*. Si alguien pide "poner las unidades en
 decisión que ya se tomó al revés: preguntar antes de volver a agregarlo.
 
 **No carga NI modifica nada.** Los datos los cargan Martín Pregelj (employee_id 15) y
-Martín Cornejo (34) desde Planify → botón **"Ingreso matrices"**, que escribe en
+Martín Cornejo (34) desde Planify → módulo **"🛠️ Matricería"**, que escribe en
 `planify.matrices_ingresos` del proyecto Supabase `hrxfctzncixxqmpfhskv`. Este repo sólo
 LEE la vista `planify.v_matriceria_monitor`.
 
@@ -61,7 +61,7 @@ la lista `MAT_ESTADOS` de Planify (`src/index.html`) y el objeto `ESTADOS` de es
 
 ## Dónde está la otra mitad
 
-Repo **`loekemeyer/Planify`**: el módulo "Ingreso matrices" (`src/index.html`,
+Repo **`loekemeyer/Planify`**: el módulo "Matricería" (`src/index.html`,
 `supabase.js`, `main.js`, `preload.js`) y la migración
 `supabase/20260916_matriceria_ingresos.sql`, que es la fuente de verdad del schema.
 Repo **`loekemeyer/Gestion-Productiva-2.0`**: la pantalla *Unidades sin Accidente*

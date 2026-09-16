@@ -82,14 +82,14 @@
   <footer>
     <span id="estadoConn">Conectando…</span>
     <div class="puntos" id="puntos"></div>
-    <span id="pie">Se carga desde Planify · Ingreso matrices</span>
+    <span id="pie">Se carga desde Planify · Matricería</span>
   </footer>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
    MONITOR DE MATRICERÍA — visualizador, NO carga nada.
    Lee planify.v_matriceria_monitor del proyecto Supabase de Gestión Virgilio.
-   Lo que se ve acá lo cargan Pregelj y Cornejo desde el botón "Ingreso matrices"
+   Lo que se ve acá lo cargan Pregelj y Cornejo desde el módulo "Matricería"
    de Planify. Este archivo no escribe: la clave publishable sólo tiene SELECT
    sobre esa tabla (los writes van por RPC, ver el repo Planify).
    Parámetros por URL (opcionales):
@@ -190,8 +190,8 @@ function pintar(){
     ? Array.from({length:paginas}, (_,i) => `<i class="${i===pagina?'on':''}"></i>`).join('')
     : '';
   $('pie').textContent = paginas > 1
-    ? `Pantalla ${pagina+1} de ${paginas} · se carga desde Planify → Ingreso matrices`
-    : 'Se carga desde Planify → Ingreso matrices';
+    ? `Pantalla ${pagina+1} de ${paginas} · se carga desde Planify → Matricería`
+    : 'Se carga desde Planify → Matricería';
 }
 
 function reloj(){
