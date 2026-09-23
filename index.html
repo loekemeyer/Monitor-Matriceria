@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.20">
+<meta name="monitor-version" content="2026-09-23.21">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -130,6 +130,7 @@
     padding:1.1vh 2vw;border-top:.35vh solid #21262d;font-size:1.9vh;color:#8b949e;gap:2vw;
   }
   #estadoConn.mal{color:#ff7b72;font-weight:700}
+  #ver{opacity:.55;font-variant-numeric:tabular-nums}
 
   /* Cartel de version vieja: rojo brillante, letras blancas, arriba de todo. Empuja el
      tablero hacia abajo en vez de taparlo (es un flex item mas), asi no esconde ninguna
@@ -162,6 +163,7 @@
   <footer>
     <span id="estadoConn">Conectando…</span>
     <span id="pie">Se carga desde Planify · Matricería</span>
+    <span id="ver"></span>
   </footer>
 
 <script>
@@ -379,6 +381,9 @@ function pintarRes(){
 // <meta name="monitor-version"> y se compara con el de la copia que esta corriendo.
 // Si no coinciden, cartel rojo. Si falla la bajada (TV sin red), no se toca nada.
 const VERSION_LOCAL = (document.querySelector('meta[name="monitor-version"]') || {}).content || '';
+// La version, escrita en el pie: desde el taller se mira la TV y se sabe que copia tiene,
+// sin depender de que el cartel haya saltado o no.
+try{ $('ver').textContent = 'v' + (VERSION_LOCAL || '?'); }catch(e){}
 const AUTORECARGA   = qs.get('autorecarga') !== '0';
 let   avisoVersion  = false;
 
@@ -428,7 +433,12 @@ function reloj(){
 pintarRes();          window.addEventListener('resize', pintarRes);
 // El primer chequeo al minuto (por si la TV arranco con una copia vieja de la cache) y
 // despues cada 10 minutos: es un archivo de 20 KB, no molesta a nadie.
-setTimeout(chequearVersion, 60000);  setInterval(chequearVersion, 600000);
+// Primer chequeo a los 15 s y despues cada 2 minutos. Antes era 60 s y 10 minutos, y esa
+// espera de hasta 10 minutos es lo que hacia parecer que el aviso "no funcionaba": el
+// mecanismo andaba, pero entre que se publicaba y que la TV se enteraba pasaba un rato
+// largo. El costo de chequear es UN GET del propio index.html (~30 KB); a 2 minutos son 30
+// por hora, contra las 120 consultas a Supabase que la pantalla ya hace en ese mismo rato.
+setTimeout(chequearVersion, 15000);  setInterval(chequearVersion, 120000);
 reloj();              setInterval(reloj, 10000);
 actualizar();         setInterval(actualizar, REFRESCO);
 // Si cambia el tamaño de la ventana hay que recalcular la grilla y la letra.

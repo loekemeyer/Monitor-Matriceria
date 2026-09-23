@@ -128,6 +128,15 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   pidiendo recarga a mano. Sin subir la meta, el aviso no salta nunca y la TV puede quedar
   semanas con una copia vieja — que es exactamente lo que pasó el 23/09/2026, dos veces en
   la misma tarde.
+  **Chequea a los 15 s de abrir y después cada 2 minutos.** Arrancó en 60 s / 10 minutos y
+  esa espera de hasta diez minutos es lo que hizo decir a Elías que *"no funcionó lo del
+  mensaje en rojo"*: el mecanismo andaba —se reprodujo contra un servidor real, 6 de 6
+  checks— pero entre publicar y que la TV se entere pasaba un rato largo. El costo de
+  chequear es UN GET del propio `index.html` (~30 KB); a 2 minutos son 30 por hora, contra
+  las 120 consultas a Supabase que la pantalla ya hace en ese mismo rato.
+  **La versión que corre se ve en el pie**, abajo a la derecha (`#ver`). Sin eso no había
+  forma de saber desde el taller qué copia tiene la TV, y "no saltó el aviso" no se podía
+  distinguir de "ya estaba al día".
 - ⚠ **La TV del taller NO es una PC**: entra por un aparato tipo **Roku**, con control
   remoto, sin F11 y sin manera de sacar la barra del navegador. Informa **ventana 962 × 485**,
   pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). **Al probar un cambio hay que
