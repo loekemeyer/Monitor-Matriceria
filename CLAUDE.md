@@ -7,7 +7,7 @@
 ## Qué es
 
 Un **visualizador** para la TV de 32" del taller: **un renglón por matriz**, con
-**Ingreso · Descripción · Estado**, en el **formato de cuadro sinóptico** de la casa.
+**Ingreso · Descripción · Problema · Estado**, en el **formato de cuadro sinóptico** de la casa.
 Sale de `planify.v_matriceria_monitor`.
 
 ⚠ **El número de matriz NO se muestra** (Elías, 23/09/2026). Si lo cargaron, se muestra la
@@ -67,6 +67,23 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
     no un olvido: el resto del formato se cumple tal cual.
   - **Ordenado por gravedad, de mayor a menor**: lo trae la consulta, por `dias_demora desc`.
   - **Tabla sólo con 3 filas o más**; con menos va como lista, sin encabezado (`conTitulos`).
+- **Problema y "qué se espera" en pantalla** (Elías, 23/09/2026: *"que el problema y el texto
+  de esperando se vean también en la TV"*). El `motivo` del módulo es la columna
+  **Problema**, entre Descripción y Estado, en un gris más apagado: lo primero que se busca
+  en la TV es QUÉ matriz es, y después por qué está. Si está vacío se dibuja un `—`, para que
+  la columna no quede en blanco. El `espera` va al lado del chip **sólo** cuando el estado es
+  `esperando`. Los dos ya viajaban en la vista y el monitor pide `select=*`: no hubo que tocar
+  la base.
+  ⚠ **El tope en em de cada texto es lo que protege el tamaño de letra.** Como la letra sale
+  de dividir el alto por los renglones y después se achica si la tabla no entra a lo ancho, UN
+  motivo largo le bajaba la letra a los 11 renglones. Por eso `.c-desc span` corta a 18 em,
+  `.c-prob span` a 16 y `.c-estado em` a 12, con puntos suspensivos. Medido a 962×485 con las
+  11 matrices: 835 px de tabla y **16,5 px de letra**, igual que sin la columna; con un motivo
+  y una espera largos a propósito, 888 px y **los mismos 16,5 px**.
+  ⚠ En el renglón que espera algo, el chip queda corrido a la izquierda respecto de los demás:
+  el contenido de la celda va centrado y ahí hay dos cosas en vez de una. Es a propósito —
+  alinearlos exigía dejar ~180 px vacíos en los otros diez renglones, que es justo el "espacio
+  muerto" que el formato prohíbe — y de paso hace saltar a la vista la que está frenada.
 - **Abreviaturas de la descripción** (`ABREVIATURAS`): hoy sólo `corte` → `C/`, que es la
   palabra que más se repite en el maestro. Sumar otra es agregar un par a esa lista.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
@@ -95,6 +112,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   a la izquierda. Una TV en blanco no le sirve a nadie.
 - **Lo que ya NO se muestra** (estuvo unas horas el 23/09/2026 y lo sacó el formato de una
   línea): número de matriz, tarea a realizar, ya hecho, quién, HS, salida estimada y la foto.
+  El **problema** (`motivo`) volvió el 23/09 como columna propia, ver más arriba.
   El bucket `planify_matriceria` sigue existiendo y Planify sigue guardando fotos; la TV
   simplemente no las pide.
 

@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.12">
+<meta name="monitor-version" content="2026-09-23.13">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -81,16 +81,23 @@
     font-size:.8em;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);white-space:nowrap;
   }
-  .c-prio, .c-fecha, .c-desc, .c-estado{display:flex;align-items:center;justify-content:center;min-width:0}
+  .c-prio, .c-fecha, .c-desc, .c-prob, .c-estado{display:flex;align-items:center;justify-content:center;min-width:0}
   /* La prioridad es el orden en que hay que atacarlas: la elige Planify, aca solo se muestra. */
   .c-prio  {flex:0 0 var(--w-prio,auto);font-variant-numeric:tabular-nums;font-weight:800}
   .c-fecha {flex:0 0 var(--w-fecha,auto);font-variant-numeric:tabular-nums}
   .c-desc  {flex:0 0 var(--w-desc,auto);justify-content:center}
-  .c-desc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  /* Por que entro la matriz (el "Problema" del modulo). Mas apagado que la descripcion:
+     lo primero que se busca en la TV es QUE matriz es, y despues por que esta. */
+  .c-prob  {flex:0 0 var(--w-prob,auto);color:#adbac7}
+  /* Los topes en em son lo que evita que UN texto largo ensanche la tabla y, por la
+     segunda pasada de pintar(), le achique la letra a los 11 renglones. Con el tope, ese
+     texto se corta con puntos suspensivos y los demas renglones no pagan el precio. */
+  .c-desc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18em}
+  .c-prob span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16em}
   .c-estado{flex:0 0 var(--w-estado,auto);gap:.4em}
   /* Que se esta esperando: sin eso, "Esperando" no le dice a nadie que falta. */
   .c-estado em{font-style:normal;font-size:.8em;color:#8b949e;white-space:nowrap;
-               overflow:hidden;text-overflow:ellipsis;max-width:14em}
+               overflow:hidden;text-overflow:ellipsis;max-width:12em}
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
@@ -240,6 +247,7 @@ function fila(m, i){
        + `<div class="c-prio"><span>${i + 1}</span></div>`
        + `<div class="c-fecha"><span>${fecha(m.fecha_ingreso)}</span></div>`
        + `<div class="c-desc"><span>${esc(descripcion(m))}</span></div>`
+       + `<div class="c-prob"><span>${esc(String(m.motivo || '').trim() || '—')}</span></div>`
        + `<div class="c-estado"><span><i>${e.txt}</i>${espera ? `<em>${esc(espera)}</em>` : ''}</span></div>`
        + `</div>`;
 }
@@ -250,7 +258,7 @@ function fila(m, i){
 function ajustarColumnas(cont){
   const tabla = cont.querySelector('.tabla');
   if (!tabla) return;
-  for (const col of ['prio', 'fecha', 'desc', 'estado']){
+  for (const col of ['prio', 'fecha', 'desc', 'prob', 'estado']){
     let max = 0;
     // Se mide el dato Y el titulo. Los titulos ya vienen abreviados ("#", "Ing."), asi que
     // hoy el dato gana en las cuatro columnas y el ancho sale del dato, como pide el formato.
@@ -265,7 +273,7 @@ function ajustarColumnas(cont){
 
 const EM_FILA  = 1.95;   // alto de un renglon con su relleno y su separacion, en em
 const EM_TH    = 2.6;    // el encabezado, con el titulo a 1,14em y lugar para dos lineas
-const EM_ANCHO = 27;     // prioridad + fecha + estado + separaciones + lo minimo de la descripcion
+const EM_ANCHO = 38;     // prioridad + fecha + estado + separaciones + lo minimo de descripcion y problema
 const FS_MAX   = 40;     // con una o dos matrices, que no quede un renglon gigante
 
 function pintar(){
@@ -294,7 +302,8 @@ function pintar(){
   cont.innerHTML = `<div class="tabla" style="--fs:${fs.toFixed(2)}px">`
     + (conTitulos
         ? '<div class="th"><span class="c-prio">#</span><span class="c-fecha">Ing.</span>'
-        + '<span class="c-desc">Descripción</span><span class="c-estado">Estado</span></div>'
+        + '<span class="c-desc">Descripción</span><span class="c-prob">Problema</span>'
+        + '<span class="c-estado">Estado</span></div>'
         : '')
     + datos.map((m, i) => fila(m, i)).join('')
     + '</div>';
@@ -307,7 +316,7 @@ function pintar(){
   if (natural > ancho){
     const fs2 = Math.max(9, fs * (ancho / natural));
     tabla.style.setProperty('--fs', fs2.toFixed(2) + 'px');
-    ['prio','fecha','desc','estado'].forEach(c => tabla.style.removeProperty('--w-' + c));
+    ['prio','fecha','desc','prob','estado'].forEach(c => tabla.style.removeProperty('--w-' + c));
     ajustarColumnas(cont);
   }
 }
