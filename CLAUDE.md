@@ -7,7 +7,7 @@
 ## Qué es
 
 Un **visualizador** para la TV de 32" del taller: **un renglón por matriz**, con
-**Ingreso · Descripción · Estado · Problema**, en el **formato de cuadro sinóptico** de la casa.
+**Ingreso · Descripción · Estado · Problema · Espera**, en el **formato de cuadro sinóptico** de la casa.
 Sale de `planify.v_matriceria_monitor`.
 
 ⚠ **El número de matriz NO se muestra** (Elías, 23/09/2026). Si lo cargaron, se muestra la
@@ -86,22 +86,24 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   `.c-prob em` van con `-webkit-line-clamp:2`. Recién al tercero corta, porque si no un texto
   enorme desarma la pantalla. Con los textos de hoy no se parte ninguno: la segunda línea es
   la salida de emergencia, no el caso normal.
-  **El orden es `#` · Ing. · Descripción · ESTADO · Problema**, con la espera pegada al
-  problema (Elías: *"problema y espera van después de estado"*). Eso resuelve de paso el chip
-  descolocado: la celda de Estado queda con el chip y nada más, así que mide lo que mide un
-  chip y los once quedan alineados; lo que varía de ancho —problema y espera— se fue a la
-  última columna, donde crecer no descoloca nada.
-  ⚠ En cambio, la columna **Problema** sí se ensancha con la espera más larga, y los diez
-  renglones que no esperan nada quedan con su problema centrado en una columna más ancha de lo
-  que necesitan. Es el precio de tenerlos en la misma celda; la alternativa —una columna
-  *Espera* aparte— dejaría diez celdas vacías, que el formato prohíbe.
+  **El orden es `#` · Ing. · Descripción · ESTADO · Problema · Espera** (Elías, 23/09/2026:
+  *"problema y espera van después de estado"* y *"problema y espera separados, 1ro
+  problema"*). Cada una en su columna: así la de Problema mide sólo los problemas y no se
+  ensancha por la espera más larga. Eso resuelve de paso el chip descolocado — la celda de
+  Estado queda con el chip y nada más, así que mide lo que mide un chip y los once quedan
+  alineados. El texto de la espera va en el color del estado, para que se lea de qué chip
+  viene.
+  ⚠ **La columna Espera sólo se dibuja si alguna matriz espera algo** (`conEspera` en
+  `pintar()`, que se le pasa a `fila()`). Sin eso quedaría una columna entera vacía, que es
+  justo lo que el formato prohíbe; y ése es el caso normal, porque casi nunca hay una
+  esperando. Con cero esperas la tabla mide 682 px; con una, 865; con tres, 877.
   ⚠ `ajustarColumnas()` mide la **celda entera**, no sus hijos: la del problema lleva dos
   cosas al lado y midiendo hijo por hijo se tomaría el más ancho en vez de la suma.
   ⚠ Cuántos renglones se parten en dos **no se puede saber antes de dibujar**, así que la
   primera estimación de `pintar()` asume una línea por matriz y la **segunda pasada mide la
-  caja real —ancho Y alto— y corrige**. Medido a 962×485 con las 11 matrices: 814 px de tabla
-  y **16,5 px** de letra; con un problema y una espera largos a propósito, 807 px y
-  **16,4 px**.
+  caja real —ancho Y alto— y corrige**. Medido a 962×485 con las 11 matrices: **16,5 px** de
+  letra sin esperas, con una y con tres; con un problema y una espera largos a propósito la
+  tabla llega justo a los 924 px disponibles y la letra baja a **16,2 px**.
 - **Abreviaturas de la descripción** (`ABREVIATURAS`): hoy sólo `corte` → `C/`, que es la
   palabra que más se repite en el maestro. Sumar otra es agregar un par a esa lista.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
