@@ -1,6 +1,6 @@
 # Monitor Matricería
 
-TV del taller: **un renglón por matriz**, con **Ingreso · Descripción · Problema · Estado**, en el
+TV del taller: **un renglón por matriz**, con **Ingreso · Descripción · Estado · Problema**, en el
 **formato de cuadro sinóptico** de la casa — columnas del ancho del dato, título más grande
 que el contenido, centrado y ordenado por demora de mayor a menor. El color y el relleno
 siguen la estética de la página (fondo del renglón, barra del estado y chip), que es la
