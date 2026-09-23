@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.9">
+<meta name="monitor-version" content="2026-09-23.10">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -48,6 +48,8 @@
      "aplicar el formato de cuadro sinoptico, sin excluir ninguna regla"). De ese formato
      salen, una por una:
        - ancho de columna segun el DATO, no segun el titulo  -> lo mide ajustarColumnas()
+         ("Prio." ya viene abreviado: "Prioridad" es una sola palabra, no se puede partir
+          en dos lineas, asi que el formato manda abreviar)
        - titulo mas grande que el contenido (16 contra 14)   -> .th span va a 1.14em
        - centrado horizontal y vertical                      -> en las celdas y en la tabla
        - sin ancho fijo, sin columnas vacias
@@ -76,7 +78,9 @@
     font-size:.8em;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);white-space:nowrap;
   }
-  .c-fecha, .c-desc, .c-estado{display:flex;align-items:center;justify-content:center;min-width:0}
+  .c-prio, .c-fecha, .c-desc, .c-estado{display:flex;align-items:center;justify-content:center;min-width:0}
+  /* La prioridad es el orden en que hay que atacarlas: la elige Planify, aca solo se muestra. */
+  .c-prio  {flex:0 0 var(--w-prio,auto);font-variant-numeric:tabular-nums;font-weight:800}
   .c-fecha {flex:0 0 var(--w-fecha,auto);font-variant-numeric:tabular-nums}
   .c-desc  {flex:0 0 var(--w-desc,auto);justify-content:center}
   .c-desc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -184,8 +188,11 @@ const fecha = d => { if (!d) return '—'; const [y,m,dd] = String(d).split('-')
 async function traer(){
   // estado=neq.terminada: el monitor muestra lo que está EN el taller. Cuando la matriz se
   // termina (o se cierra su tarea en Planify) desaparece sola de la TV.
+  // El orden lo decide la PRIORIDAD que eligieron en Planify (1 primero). Las que todavía
+  // no tienen número quedan al final, por demora, como antes.
   const url = SUPABASE_URL + '/rest/v1/v_matriceria_monitor'
-            + '?select=*&estado=neq.terminada&order=dias_demora.desc,fecha_ingreso.asc';
+            + '?select=*&estado=neq.terminada'
+            + '&order=prioridad.asc.nullslast,dias_demora.desc,fecha_ingreso.asc';
   const r = await fetch(url, { headers:{ apikey:SUPABASE_KEY, 'Accept-Profile':'planify' }, cache:'no-store' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
@@ -215,11 +222,14 @@ function descripcion(m){
   return abreviar(String(m.nombre_matriz || '').trim() || String(m.numero_matriz || '').trim());
 }
 
-function fila(m){
+// El numero que se ve es la POSICION en la lista, no el valor guardado: asi, cuando una
+// matriz se termina, las que quedan siguen numeradas 1, 2, 3... sin huecos.
+function fila(m, i){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
   const clase = d >= 7 ? 'alerta' : (d >= 3 ? 'aviso' : '');
   return `<div class="fila ${clase}" style="--c:${e.c};--cb:${e.cb}">`
+       + `<div class="c-prio"><span>${i + 1}</span></div>`
        + `<div class="c-fecha"><span>${fecha(m.fecha_ingreso)}</span></div>`
        + `<div class="c-desc"><span>${esc(descripcion(m))}</span></div>`
        + `<div class="c-estado"><span><i>${e.txt}</i></span></div>`
@@ -232,7 +242,7 @@ function fila(m){
 function ajustarColumnas(cont){
   const tabla = cont.querySelector('.tabla');
   if (!tabla) return;
-  for (const col of ['fecha', 'desc', 'estado']){
+  for (const col of ['prio', 'fecha', 'desc', 'estado']){
     let max = 0;
     tabla.querySelectorAll('.fila .c-' + col + ' span').forEach(el => {
       max = Math.max(max, el.getBoundingClientRect().width);
@@ -243,7 +253,7 @@ function ajustarColumnas(cont){
 
 const EM_FILA  = 1.95;   // alto de un renglon con su relleno y su separacion, en em
 const EM_TH    = 2.6;    // el encabezado, con el titulo a 1,14em y lugar para dos lineas
-const EM_ANCHO = 24;     // fecha + estado + separaciones + lo minimo que necesita la descripcion
+const EM_ANCHO = 27;     // prioridad + fecha + estado + separaciones + lo minimo de la descripcion
 const FS_MAX   = 40;     // con una o dos matrices, que no quede un renglon gigante
 
 function pintar(){
@@ -271,10 +281,10 @@ function pintar(){
 
   cont.innerHTML = `<div class="tabla" style="--fs:${fs.toFixed(2)}px">`
     + (conTitulos
-        ? '<div class="th"><span class="c-fecha">Ingreso</span>'
+        ? '<div class="th"><span class="c-prio">Prio.</span><span class="c-fecha">Ingreso</span>'
         + '<span class="c-desc">Descripción</span><span class="c-estado">Estado</span></div>'
         : '')
-    + datos.map(fila).join('')
+    + datos.map((m, i) => fila(m, i)).join('')
     + '</div>';
 
   // Segunda pasada por el ANCHO: con las columnas ya medidas, si la descripcion mas larga
@@ -285,7 +295,7 @@ function pintar(){
   if (natural > ancho){
     const fs2 = Math.max(9, fs * (ancho / natural));
     tabla.style.setProperty('--fs', fs2.toFixed(2) + 'px');
-    ['fecha','desc','estado'].forEach(c => tabla.style.removeProperty('--w-' + c));
+    ['prio','fecha','desc','estado'].forEach(c => tabla.style.removeProperty('--w-' + c));
     ajustarColumnas(cont);
   }
 }
