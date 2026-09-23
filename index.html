@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.11">
+<meta name="monitor-version" content="2026-09-23.12">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -48,8 +48,10 @@
      "aplicar el formato de cuadro sinoptico, sin excluir ninguna regla"). De ese formato
      salen, una por una:
        - ancho de columna segun el DATO, no segun el titulo  -> lo mide ajustarColumnas()
-         ("Prio." ya viene abreviado: "Prioridad" es una sola palabra, no se puede partir
-          en dos lineas, asi que el formato manda abreviar)
+         (medido a 962x485 con 11 matrices: "Prio." pedia 50px cuando el numero ocupa 23,
+          e "Ingreso" pedia 70 cuando "22/09" ocupa 48. Las dos son UNA palabra, asi que no
+          se pueden partir en dos lineas: el formato manda abreviar. "#" e "Ing." bajan la
+          tabla de 499 a 450px y ya ninguna columna la manda el titulo)
        - titulo mas grande que el contenido (16 contra 14)   -> .th span va a 1.14em
        - centrado horizontal y vertical                      -> en las celdas y en la tabla
        - sin ancho fijo, sin columnas vacias
@@ -250,9 +252,10 @@ function ajustarColumnas(cont){
   if (!tabla) return;
   for (const col of ['prio', 'fecha', 'desc', 'estado']){
     let max = 0;
-    // Se mide el dato Y el titulo: el titulo ya viene abreviado ("Prio."), asi que si aun
-    // asi es mas ancho que el dato, la columna lo respeta. Un encabezado pisando al de al
-    // lado es peor que una columna un poco mas ancha.
+    // Se mide el dato Y el titulo. Los titulos ya vienen abreviados ("#", "Ing."), asi que
+    // hoy el dato gana en las cuatro columnas y el ancho sale del dato, como pide el formato.
+    // El max() queda igual de red de seguridad: si manana un titulo se alarga, la columna lo
+    // respeta en vez de dejar un encabezado pisando al de al lado.
     tabla.querySelectorAll('.fila .c-' + col + ' span, .th .c-' + col).forEach(el => {
       max = Math.max(max, el.getBoundingClientRect().width);
     });
@@ -290,7 +293,7 @@ function pintar(){
 
   cont.innerHTML = `<div class="tabla" style="--fs:${fs.toFixed(2)}px">`
     + (conTitulos
-        ? '<div class="th"><span class="c-prio">Prio.</span><span class="c-fecha">Ingreso</span>'
+        ? '<div class="th"><span class="c-prio">#</span><span class="c-fecha">Ing.</span>'
         + '<span class="c-desc">Descripción</span><span class="c-estado">Estado</span></div>'
         : '')
     + datos.map((m, i) => fila(m, i)).join('')
