@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.23">
+<meta name="monitor-version" content="2026-09-23.26">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -17,8 +17,15 @@
   body{
     background:#0d1117;color:#e6edf3;
     font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
-    display:flex;flex-direction:column;
   }
+  /* Sin giro, #rot ocupa la pantalla y se comporta igual que el body de antes. */
+  #rot{width:100%;height:100%;display:flex;flex-direction:column}
+  /* Con giro, la caja se arma AL REVES -alto de pantalla como ancho y viceversa- y despues
+     se rota. El translate es para traerla de vuelta al area visible: rotando 90 grados desde
+     la esquina de arriba a la izquierda, la caja se va toda a la izquierda del borde. */
+  body.giro #rot{position:absolute;top:0;left:0;width:100vh;height:100vw;transform-origin:top left}
+  body.giro90  #rot{transform:translateX(100vw) rotate(90deg)}
+  body.giro270 #rot{transform:translateY(100vh) rotate(-90deg)}
   header{
     display:flex;align-items:center;justify-content:space-between;
     padding:1.6vh 2vw;border-bottom:.35vh solid #21262d;gap:2vw;flex:0 0 auto;
@@ -64,6 +71,7 @@
   /* width:auto y columnas medidas = columnas proximas, sin ancho sobrante. La tabla queda
      del ancho de sus datos y el <main> la centra en la pantalla. */
   .tabla{display:flex;flex-direction:column;font-size:var(--fs,16px);width:auto;max-width:100%}
+  .tabla.lista{width:100%}
   .th{display:flex;align-items:flex-end;gap:.55em;padding:0 .9em .3em}
   .th span{font-size:1.14em;color:#8b949e;line-height:1;white-space:nowrap;text-align:center}
   .fila{
@@ -85,7 +93,7 @@
      la celda de Estado queda con el chip y nada mas, asi que mide lo que mide un chip y los
      once quedan alineados. Lo que varia de ancho -problema y espera- se fue a la ultima
      columna, donde crecer no descoloca nada. */
-  .c-estado i{
+  .c-estado i, .lista .l1 i{
     font-style:normal;display:inline-block;padding:.12em .7em;border-radius:99px;
     font-size:.8em;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);white-space:nowrap;
@@ -119,6 +127,22 @@
   .c-prob span{max-width:16em}
   .c-espera span{max-width:14em;font-size:.92em}
 
+  /* MODO LISTA, para la pantalla vertical. Con la TV dada vuelta quedan 447 px de ancho y
+     la tabla de seis columnas no entra: medido, la letra caia a 10,2 px, ilegible desde el
+     taller. Asi que en vertical cada matriz ocupa DOS renglones y no hay encabezado — que es
+     literalmente lo que pidio Elias, "una lista a lo largo". El alto sobra (828 px), asi que
+     gastarlo en un segundo renglon es gratis y el ancho deja de ser el que manda:
+     medido, 19,4 px de letra contra los 16,5 de la horizontal. */
+  .lista .fila{display:block;padding:.34em .8em}
+  .lista .l1{display:flex;align-items:center;gap:.5em}
+  .lista .l1 .n{font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:1.2em;text-align:right}
+  .lista .l1 .d{flex:1 1 auto;min-width:0;white-space:normal;overflow:hidden;
+                display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .lista .l2{display:flex;align-items:baseline;gap:.5em;font-size:.84em;margin-top:.1em;padding-left:1.7em}
+  .lista .l2 .p{flex:1 1 auto;min-width:0;white-space:normal;overflow:hidden;
+                display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .lista .l2 .e{flex:0 0 auto;white-space:nowrap;max-width:10em;overflow:hidden;text-overflow:ellipsis}
+
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
@@ -146,6 +170,11 @@
 </style>
 </head>
 <body>
+  <!-- Todo el contenido vive adentro de #rot. La TV del taller se colgo DADA VUELTA (Elias,
+       23/09/2026: "dimos vuelta la TV para que sea una lista a lo largo"), pero el aparato
+       que la maneja sigue mandando la imagen en horizontal: la unica forma de enderezarla es
+       rotar la pagina. Con ?giro=0 se ve como antes; con ?giro=270 gira para el otro lado. -->
+  <div id="rot">
   <div id="cartelVer"></div>
   <header>
     <div class="titulo">
@@ -165,6 +194,7 @@
     <span id="pie">Se carga desde Planify · Matricería</span>
     <span id="ver"></span>
   </footer>
+  </div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -260,6 +290,23 @@ function descripcion(m){
 
 // El numero que se ve es la POSICION en la lista, no el valor guardado: asi, cuando una
 // matriz se termina, las que quedan siguen numeradas 1, 2, 3... sin huecos.
+// Un renglon de la LISTA (pantalla vertical): arriba puesto, descripcion y chip; abajo la
+// fecha, el problema y -si espera algo- que espera.
+function filaLista(m, i){
+  const e = ESTADOS[m.estado] || ESTADOS.ingresada;
+  const d = Number(m.dias_demora || 0);
+  const clase = d >= 7 ? 'alerta' : (d >= 3 ? 'aviso' : '');
+  const espera = m.estado === 'esperando' ? String(m.espera || '').trim() : '';
+  const prob = String(m.motivo || '').trim();
+  return `<div class="fila ${clase}" style="--c:${e.c};--cb:${e.cb}">`
+       + `<div class="l1"><span class="n">${i + 1}</span>`
+       +   `<span class="d">${esc(descripcion(m))}</span><i>${e.txt}</i></div>`
+       + `<div class="l2"><span class="f">${fecha(m.fecha_ingreso)}</span>`
+       +   `<span class="p">${esc(prob || '—')}</span>`
+       +   (espera ? `<span class="e">${esc(espera)}</span>` : '')
+       + `</div></div>`;
+}
+
 function fila(m, i, conEspera){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
@@ -300,6 +347,8 @@ function ajustarColumnas(cont){
 
 const EM_FILA  = 1.95;   // alto de un renglon con su relleno y su separacion, en em
 const EM_TH    = 2.6;    // el encabezado, con el titulo a 1,14em y lugar para dos lineas
+const EM_ITEM  = 3.05;   // alto de un renglon de la LISTA (dos lineas + relleno), en em
+const EM_ANCHO_LISTA = 24; // lo minimo a lo ancho en modo lista
 const EM_ANCHO = 44;     // prioridad + fecha + estado + separaciones + lo minimo de descripcion, problema y espera
 const FS_MAX   = 40;     // con una o dos matrices, que no quede un renglon gigante
 
@@ -320,8 +369,12 @@ function pintar(){
   const ancho = cont.clientWidth  - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight)  || 0);
   const alto  = cont.clientHeight - (parseFloat(cs.paddingTop)  || 0) - (parseFloat(cs.paddingBottom) || 0);
 
+  // En pantalla VERTICAL va la lista de dos renglones; en horizontal, la tabla de siempre.
+  // No se decide por el ancho medido a proposito: asi es previsible y se puede probar con
+  // ?giro=0 sin que la pantalla cambie de forma sola.
+  const enLista = document.body.classList.contains('giro');
   // Tabla solo con 3 filas o mas; con menos va como lista, sin encabezado.
-  const conTitulos = n >= 3;
+  const conTitulos = !enLista && n >= 3;
   // La columna Espera solo existe si alguna matriz espera algo: si no, seria una columna
   // entera vacia, que es justo lo que el formato prohibe.
   const conEspera = datos.some(m => m.estado === 'esperando' && String(m.espera || '').trim());
@@ -329,17 +382,17 @@ function pintar(){
   // mide cada texto con ESTA letra), asi que aca se estima con una linea por matriz y la
   // segunda pasada, que mide el alto real, corrige si alguno se partio.
   const fs = Math.max(9, Math.min(FS_MAX,
-                                  alto / (n * EM_FILA + (conTitulos ? EM_TH : 0)),
-                                  ancho / EM_ANCHO));
+                                  alto / (n * (enLista ? EM_ITEM : EM_FILA) + (conTitulos ? EM_TH : 0)),
+                                  ancho / (enLista ? EM_ANCHO_LISTA : EM_ANCHO)));
 
-  cont.innerHTML = `<div class="tabla" style="--fs:${fs.toFixed(2)}px">`
+  cont.innerHTML = `<div class="tabla${enLista ? ' lista' : ''}" style="--fs:${fs.toFixed(2)}px">`
     + (conTitulos
         ? '<div class="th"><span class="c-prio">#</span><span class="c-fecha">Ing.</span>'
         + '<span class="c-desc">Descripción</span><span class="c-estado">Estado</span>'
         + '<span class="c-prob">Problema</span>'
         + (conEspera ? '<span class="c-espera">Espera</span>' : '') + '</div>'
         : '')
-    + datos.map((m, i) => fila(m, i, conEspera)).join('')
+    + datos.map((m, i) => enLista ? filaLista(m, i) : fila(m, i, conEspera)).join('')
     + '</div>';
 
   // Segunda pasada, por ANCHO y por ALTO. Ancho: con las columnas ya medidas, si la
@@ -348,15 +401,19 @@ function pintar(){
   // lineas la vuelven menos exacta, asi que se MIDE lo que ocupo de verdad y se corrige.
   // Medir es mas confiable que afinar las constantes: si manana se agrega otra linea, esto
   // sigue andando solo.
-  ajustarColumnas(cont);
+  if (!enLista) ajustarColumnas(cont);        // la lista no tiene columnas que medir
   const tabla = cont.querySelector('.tabla');
-  const caja  = tabla.getBoundingClientRect();
-  const sobra = Math.min(ancho / caja.width, alto / caja.height);
+  // OJO: offsetWidth/offsetHeight y NO getBoundingClientRect(). Con la pantalla girada, el
+  // rect devuelve la caja ALINEADA A LA PANTALLA, o sea con el ancho y el alto cambiados de
+  // lugar, y la correccion se hacia con los numeros al reves: la letra terminaba en 13,2 px
+  // por un motivo inventado. offsetWidth/Height son medidas de maquetado y el transform del
+  // padre no las toca. (clientWidth/clientHeight de mas arriba ya eran correctos por lo mismo.)
+  const sobra = Math.min(ancho / tabla.offsetWidth, alto / tabla.offsetHeight);
   if (sobra < 1){
     const fs2 = Math.max(9, fs * sobra);
     tabla.style.setProperty('--fs', fs2.toFixed(2) + 'px');
     ['prio','fecha','desc','estado','prob','espera'].forEach(c => tabla.style.removeProperty('--w-' + c));
-    ajustarColumnas(cont);
+    if (!enLista) ajustarColumnas(cont);
   }
 }
 
@@ -385,6 +442,11 @@ const VERSION_LOCAL = (document.querySelector('meta[name="monitor-version"]') ||
 // sin depender de que el cartel haya saltado o no. diag() le agrega despues que paso en el
 // ultimo chequeo.
 const AUTORECARGA   = qs.get('autorecarga') !== '0';
+// Giro de la pantalla. 90 por defecto porque la TV del taller esta dada vuelta; ?giro=0 la
+// deja horizontal (para mirarla desde una PC) y ?giro=270 la gira para el otro lado, por si
+// quedo cabeza abajo. Se aplica ya, antes de dibujar, asi pintar() mide la caja correcta.
+const GIRO = (qs.get('giro') || '90').trim();
+if (GIRO === '90' || GIRO === '270') document.body.className = 'giro giro' + GIRO;
 let   avisoVersion  = false;
 
 function mostrarCartel(txt){

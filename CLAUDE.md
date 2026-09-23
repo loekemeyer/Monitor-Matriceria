@@ -8,6 +8,7 @@
 
 Un **visualizador** para la TV de 32" del taller: **un renglón por matriz**, con
 **Ingreso · Descripción · Estado · Problema · Espera**, en el **formato de cuadro sinóptico** de la casa.
+**La TV está colgada de costado**, así que la página se dibuja girada 90° y en modo lista.
 Sale de `planify.v_matriceria_monitor`.
 
 ⚠ **El número de matriz NO se muestra** (Elías, 23/09/2026). Si lo cargaron, se muestra la
@@ -111,6 +112,27 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   caja real —ancho Y alto— y corrige**. Medido a 962×485 con las 11 matrices: **16,5 px** de
   letra sin esperas, con una y con tres; con un problema y una espera largos a propósito la
   tabla llega justo a los 924 px disponibles y la letra baja a **16,2 px**.
+- ⚠ **PANTALLA VERTICAL: la página se dibuja GIRADA 90° y en modo LISTA** (Elías,
+  23/09/2026: *"poneme el monitor de TV en 90°, dimos vuelta la TV para que sea una lista a
+  lo largo"*). La TV se colgó de costado pero el aparato que la maneja **sigue mandando la
+  imagen en horizontal**: la única forma de enderezarla es rotar la página. Todo el contenido
+  vive dentro de `#rot`, que en modo giro se arma al revés (`width:100vh; height:100vw`) y se
+  rota con un `translate` que lo trae de vuelta al área visible.
+  - **`?giro=90`** es el default · **`?giro=270`** gira para el otro lado, si quedó cabeza
+    abajo · **`?giro=0`** la deja horizontal, que es como conviene mirarla desde una PC.
+  - **Girada NO entra la tabla de seis columnas.** Medido: el área pasa de 924×396 a
+    **447×828 px** y la letra caía a **10,2 px**, ilegible desde el taller. Por eso en
+    vertical cada matriz ocupa **dos renglones y no hay encabezado** — que es literalmente
+    "una lista a lo largo": arriba puesto · descripción · chip de estado, abajo fecha ·
+    problema · qué espera. El alto sobra, así que gastarlo en un segundo renglón sale gratis:
+    **18,6 px de letra contra los 16,5 de la horizontal**.
+  - ⚠ **`getBoundingClientRect()` MIENTE con la pantalla girada**: devuelve la caja alineada a
+    la pantalla, o sea con el ancho y el alto **cambiados de lugar**. La segunda pasada de
+    `pintar()` hacía la corrección con los números al revés y dejaba la letra en 13,2 px por
+    un motivo inventado. Ahora usa **`offsetWidth`/`offsetHeight`**, que son medidas de
+    maquetado y el `transform` del padre no las toca (`clientWidth`/`clientHeight`, que ya se
+    usaban para el área, nunca tuvieron el problema por lo mismo). **Si mañana se agrega una
+    medición acá, que no sea con `getBoundingClientRect()`.**
 - **Abreviaturas de la descripción** (`ABREVIATURAS`): hoy sólo `corte` → `C/`, que es la
   palabra que más se repite en el maestro. Sumar otra es agregar un par a esa lista.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
@@ -167,6 +189,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `refresco` | 30 | Segundos entre consultas a Supabase |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado por defecto) |
 | `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
+| `giro` | 90 | Giro de la pantalla: `90` (la TV del taller), `270` (al revés), `0` (horizontal) |
 
 La grilla ya no se elige a mano: el cuadro ocupa lo que necesita y se centra.
 
