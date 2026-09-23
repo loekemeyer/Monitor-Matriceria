@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.10">
+<meta name="monitor-version" content="2026-09-23.11">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -62,10 +62,10 @@
   /* width:auto y columnas medidas = columnas proximas, sin ancho sobrante. La tabla queda
      del ancho de sus datos y el <main> la centra en la pantalla. */
   .tabla{display:flex;flex-direction:column;font-size:var(--fs,16px);width:auto;max-width:100%}
-  .th{display:flex;align-items:flex-end;gap:1em;padding:0 .9em .3em}
-  .th span{font-size:1.14em;color:#8b949e;line-height:1;white-space:normal;text-align:center}
+  .th{display:flex;align-items:flex-end;gap:.55em;padding:0 .9em .3em}
+  .th span{font-size:1.14em;color:#8b949e;line-height:1;white-space:nowrap;text-align:center}
   .fila{
-    display:flex;align-items:center;gap:1em;padding:.3em .9em;margin-bottom:.16em;
+    display:flex;align-items:center;gap:.55em;padding:.3em .9em;margin-bottom:.16em;
     background:#161b22;border-radius:.35em;position:relative;overflow:hidden;
   }
   .fila:last-child{margin-bottom:0}
@@ -73,8 +73,9 @@
   /* La demora no ocupa columna: se ve en el color de la fecha, como en el resto de la app. */
   .fila.aviso  .c-fecha{color:#e3b341}
   .fila.alerta .c-fecha{color:#ff7b72}
+  .c-estado span{display:flex;align-items:center;gap:.4em;min-width:0}
   .c-estado i{
-    font-style:normal;display:inline-block;padding:.12em .7em;border-radius:99px;
+    font-style:normal;display:inline-block;padding:.12em .7em;border-radius:99px;flex:0 0 auto;
     font-size:.8em;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);white-space:nowrap;
   }
@@ -84,7 +85,10 @@
   .c-fecha {flex:0 0 var(--w-fecha,auto);font-variant-numeric:tabular-nums}
   .c-desc  {flex:0 0 var(--w-desc,auto);justify-content:center}
   .c-desc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-  .c-estado{flex:0 0 var(--w-estado,auto)}
+  .c-estado{flex:0 0 var(--w-estado,auto);gap:.4em}
+  /* Que se esta esperando: sin eso, "Esperando" no le dice a nadie que falta. */
+  .c-estado em{font-style:normal;font-size:.8em;color:#8b949e;white-space:nowrap;
+               overflow:hidden;text-overflow:ellipsis;max-width:14em}
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
@@ -228,11 +232,13 @@ function fila(m, i){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
   const clase = d >= 7 ? 'alerta' : (d >= 3 ? 'aviso' : '');
+  // Si esta esperando algo, va al lado del chip: "Esperando" solo no dice que falta.
+  const espera = m.estado === 'esperando' ? String(m.espera || '').trim() : '';
   return `<div class="fila ${clase}" style="--c:${e.c};--cb:${e.cb}">`
        + `<div class="c-prio"><span>${i + 1}</span></div>`
        + `<div class="c-fecha"><span>${fecha(m.fecha_ingreso)}</span></div>`
        + `<div class="c-desc"><span>${esc(descripcion(m))}</span></div>`
-       + `<div class="c-estado"><span><i>${e.txt}</i></span></div>`
+       + `<div class="c-estado"><span><i>${e.txt}</i>${espera ? `<em>${esc(espera)}</em>` : ''}</span></div>`
        + `</div>`;
 }
 
@@ -244,7 +250,10 @@ function ajustarColumnas(cont){
   if (!tabla) return;
   for (const col of ['prio', 'fecha', 'desc', 'estado']){
     let max = 0;
-    tabla.querySelectorAll('.fila .c-' + col + ' span').forEach(el => {
+    // Se mide el dato Y el titulo: el titulo ya viene abreviado ("Prio."), asi que si aun
+    // asi es mas ancho que el dato, la columna lo respeta. Un encabezado pisando al de al
+    // lado es peor que una columna un poco mas ancha.
+    tabla.querySelectorAll('.fila .c-' + col + ' span, .th .c-' + col).forEach(el => {
       max = Math.max(max, el.getBoundingClientRect().width);
     });
     if (max) tabla.style.setProperty('--w-' + col, Math.ceil(max) + 'px');
