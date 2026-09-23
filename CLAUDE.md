@@ -63,8 +63,15 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   - ⚠ **El "sin color / sin relleno" del formato NO se aplica acá**, por decisión de Elías
     (23/09/2026): *"en este caso por el color y el relleno seguí la estética de la página"*.
     Por eso el renglón conserva el fondo, la barra del estado a la izquierda y el chip de
-    color, y la fecha se pinta ámbar a los 3 días y roja a los 7. Es una excepción **pedida**,
-    no un olvido: el resto del formato se cumple tal cual.
+    color. Es una excepción **pedida**, no un olvido: el resto del formato se cumple tal cual.
+  - ⚠ **Todo el TEXTO del renglón va en blanco (`#e6edf3`) y sin negrita** — `#`, Ing.,
+    Descripción, Problema y Espera (Elías, 23/09/2026: *"ese cambio de texto hacelo a desc ing
+    # problema y espera, sin el bold"*). El único que conserva color y negrita es el **chip**
+    de Estado. **Esto sacó la señal de demora**: hasta esa versión la fecha se pintaba ámbar a
+    los 3 días y roja a los 7, y era lo ÚNICO que la mostraba (la barra de la izquierda es del
+    estado, no de la demora). Hoy el orden lo dice la columna `#`, que ordenan Pregelj y
+    Cornejo. Las clases `.aviso` y `.alerta` se siguen poniendo en `fila()` pero ya no pintan
+    nada: ahí está el lugar si alguna vez hace falta la señal de vuelta.
   - **Ordenado por gravedad, de mayor a menor**: lo trae la consulta, por `dias_demora desc`.
   - **Tabla sólo con 3 filas o más**; con menos va como lista, sin encabezado (`conTitulos`).
 - **Problema y "qué se espera" en pantalla** (Elías, 23/09/2026: *"que el problema y el texto
@@ -91,10 +98,8 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   problema"*). Cada una en su columna: así la de Problema mide sólo los problemas y no se
   ensancha por la espera más larga. Eso resuelve de paso el chip descolocado — la celda de
   Estado queda con el chip y nada más, así que mide lo que mide un chip y los once quedan
-  alineados. El texto de la espera va en **blanco y en negrita** (Elías: *"la letra en blanco
-  no rojo"* y *"la podés poner bold"*): el rojo ya lo pone el chip de al lado, repetirlo en el
-  texto no agregaba nada, y la negrita lo hace legible de lejos, que es lo que importa en una
-  TV a la que se le mira justamente eso.
+  alineados. El texto de la espera va en blanco como todo el resto (Elías: *"la letra en
+  blanco no rojo"*): el rojo ya lo pone el chip de al lado y repetirlo no agregaba nada.
   ⚠ **La columna Espera sólo se dibuja si alguna matriz espera algo** (`conEspera` en
   `pintar()`, que se le pasa a `fila()`). Sin eso quedaría una columna entera vacía, que es
   justo lo que el formato prohíbe; y ése es el caso normal, porque casi nunca hay una

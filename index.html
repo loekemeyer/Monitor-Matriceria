@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.19">
+<meta name="monitor-version" content="2026-09-23.20">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -72,9 +72,14 @@
   }
   .fila:last-child{margin-bottom:0}
   .fila::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.28em;background:var(--c,#58a6ff)}
-  /* La demora no ocupa columna: se ve en el color de la fecha, como en el resto de la app. */
-  .fila.aviso  .c-fecha{color:#e3b341}
-  .fila.alerta .c-fecha{color:#ff7b72}
+  /* TODO EL TEXTO DEL RENGLON VA EN BLANCO Y SIN NEGRITA (Elias, 23/09/2026: "ese cambio de
+     texto hacelo a desc ing # problema y espera, sin el bold"). Las clases .aviso y .alerta
+     se siguen poniendo en fila() pero ya NO pintan nada.
+     ⚠ CONSECUENCIA: la TV pierde la senal de demora. Antes la fecha se ponia ambar a los 3
+     dias y roja a los 7, y era lo UNICO que la mostraba: la barra de la izquierda es del
+     estado, no de la demora. Hoy la cola la ordenan Pregelj y Cornejo con la columna #, asi
+     que el orden dice que atacar primero; si alguna vez hace falta la senal de vuelta, las
+     dos reglas de abajo son el lugar. */
   /* Orden de las columnas: # · Ing. · Descripcion · ESTADO · Problema (Elias, 23/09/2026:
      "problema y espera van despues de estado"). De paso resuelve solo el chip descolocado:
      la celda de Estado queda con el chip y nada mas, asi que mide lo que mide un chip y los
@@ -87,21 +92,19 @@
   }
   .c-prio, .c-fecha, .c-desc, .c-estado, .c-prob, .c-espera{display:flex;align-items:center;justify-content:center;min-width:0}
   /* La prioridad es el orden en que hay que atacarlas: la elige Planify, aca solo se muestra. */
-  .c-prio  {flex:0 0 var(--w-prio,auto);font-variant-numeric:tabular-nums;font-weight:800}
+  .c-prio  {flex:0 0 var(--w-prio,auto);font-variant-numeric:tabular-nums}
   .c-fecha {flex:0 0 var(--w-fecha,auto);font-variant-numeric:tabular-nums}
   .c-desc  {flex:0 0 var(--w-desc,auto)}
   .c-estado{flex:0 0 var(--w-estado,auto)}
-  /* Por que entro la matriz (el "Problema" del modulo). Mas apagado que la descripcion:
-     lo primero que se busca en la TV es QUE matriz es. */
-  .c-prob  {flex:0 0 var(--w-prob,auto);color:#adbac7}
+  /* Por que entro la matriz (el "Problema" del modulo). En el mismo blanco que el resto. */
+  .c-prob  {flex:0 0 var(--w-prob,auto);color:#e6edf3}
   /* Que se esta esperando, en columna propia detras del problema (Elias, 23/09/2026:
      "problema y espera separados, 1ro problema"). Con columna propia cada una mide lo suyo:
      la de Problema deja de ensancharse por la espera mas larga. A cambio queda vacia en los
      renglones que no esperan nada; por eso pintar() NO dibuja la columna cuando no espera
      ninguna, que es el caso normal.
-     En BLANCO, no en el color del estado (Elias, 23/09/2026: "y la letra en blanco no rojo" + "la podes poner bold"):
-     el rojo ya lo pone el chip de al lado y repetirlo en el texto no agregaba nada. */
-  .c-espera{flex:0 0 var(--w-espera,auto);color:#e6edf3;font-weight:700}
+     En BLANCO, como todo el resto del renglon: el color lo pone el chip de al lado. */
+  .c-espera{flex:0 0 var(--w-espera,auto);color:#e6edf3}
   /* Los topes en em evitan que UN texto largo ensanche la tabla y le achique la letra a los
      once renglones. Lo que NO entra en el tope no se corta: se PARTE en dos renglones
      (Elias, 23/09/2026: "misma linea, que sea 2 lineas en caso de sobrepasar el limite de
