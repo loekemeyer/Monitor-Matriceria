@@ -5,8 +5,8 @@ tarjeta muestra **lo mismo que se carga en Planify → 🛠️ Matricería**: n�
 estado, **problema**, **tarea a realizar**, **lo ya hecho**, **quién** la está haciendo,
 **HS**, **salida estimada**, día de ingreso, días de demora y la **foto** si la subieron.
 El número de matriz va en grande con la etiqueta **MATRIZ** arriba, para que un "2" solo no
-se lea como una cantidad. Entran 6 por pantalla en una TV de 32" a 1920×1080; si hay más de 6, rota entre las
-pantallas del taller.
+se lea como una cantidad. **Entran todas las matrices en una sola pantalla**: no hay carrusel ni páginas — cuantas
+más haya, más chicas se dibujan las tarjetas, y la letra se achica con ellas.
 
 > El contador de **unidades sin accidente** por matriz **no va acá** (Thomas, 16/09/2026:
 > *"en matricería solamente un monitor fijo de las matrices que hay en el taller"*). Ese
@@ -43,14 +43,12 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 
 ### Ajustes por URL
 
-`index.html?columnas=2&porPantalla=6&refresco=30&pagina=15`
+`index.html?columnas=2&refresco=30`
 
 | Parámetro | Default | Qué hace |
 |---|---|---|
-| `porPantalla` | 6 | Matrices por pantalla |
-| `columnas` | 3 | Columnas de la grilla |
+| `columnas` | auto | Fuerza las columnas (por defecto las calcula sola) |
 | `refresco` | 30 | Segundos entre consultas |
-| `pagina` | 15 | Segundos por pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos (TV con poco ancho de banda) |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado: en la TV es ruido) |
 | `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
@@ -84,10 +82,9 @@ informa, medido el 23/09/2026:
 | Pantalla que informa el aparato | 962 × 541 |
 | Escala (`devicePixelRatio`) | 1,33 → panel real **1280 × 720** |
 
-Por eso el CSS tiene un **`@media (max-height: 600px)`**: con esa ventana, la TV pasa sola a
-**4 tarjetas (2×2)** en vez de 6 y toda la tipografía sube, para que se lea desde el fondo
-del taller. Como cada tarjeta queda con el doble de ancho, el texto entra en menos renglones
-y no se pierde nada por agrandarlo.
+El diseño se acomoda solo a esa medida: la grilla y el tamaño de letra salen de cuántas
+matrices hay y del espacio que queda, así que no hay nada atado a una resolución. Al probar
+un cambio hay que mirarlo **a 962 × 485**, que es lo que de verdad tiene el taller.
 
 Si alguna vez hay que averiguar con qué medida dibuja una pantalla nueva, se abre con
 **`?res=1`** y el header muestra los tres números de la tabla de arriba.

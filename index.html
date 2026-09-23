@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.5">
+<meta name="monitor-version" content="2026-09-23.7">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -37,62 +37,70 @@
   .res b{color:#e6edf3;font-size:2.1vh;display:block}
   .res.oculto{display:none}
 
-  main{flex:1 1 auto;display:grid;gap:1.4vh 1.2vw;padding:1.6vh 1.2vw;min-height:0}
+  /* Flex en vez de grid: con la ultima fila incompleta (10 matrices en 4 columnas) las que
+     quedan se CENTRAN en vez de dejar un hueco a la derecha. Las medidas de cada tarjeta
+     las calcula el JS para que entren todas. */
+  main{flex:1 1 auto;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;
+       gap:1.4vh 1.2vw;padding:1.6vh 1.2vw;min-height:0;overflow:hidden}
 
+  /* La tarjeta se mide en EM sobre --fs, que calcula el JS segun el tamaño de la celda:
+     asi, con mas matrices en pantalla, TODO (numero, etiquetas, textos) se achica junto y
+     en proporcion. No hay tamaños atados a la pantalla aca adentro. */
   .card{
-    background:#161b22;border:.3vh solid #30363d;border-radius:1.4vh;
-    padding:1.4vh 1.5vw;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;
+    font-size:var(--fs,14px);flex:0 0 var(--cw,auto);height:var(--ch,auto);
+    background:#161b22;border:1px solid #30363d;border-radius:.6em;
+    padding:.75em .9em;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;
   }
-  .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.9vh;background:var(--c,#58a6ff)}
-  .card .fila1{display:flex;align-items:flex-start;justify-content:space-between;gap:1vw}
+  .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.4em;background:var(--c,#58a6ff)}
+  .card .fila1{display:flex;align-items:flex-start;justify-content:space-between;gap:.6em}
   /* El numero solo no se entiende: un "2" grande puede leerse como una cantidad.
      La etiqueta MATRIZ arriba lo aclara y casi no ocupa lugar (line-height 1). */
   .nro-caja{min-width:0}
-  .nro-caja .lbl{font-size:1.5vh;color:#8b949e;text-transform:uppercase;letter-spacing:.08em;
-                 display:block;line-height:1;margin-bottom:.3vh}
+  .nro-caja .lbl{font-size:.6em;color:#8b949e;text-transform:uppercase;letter-spacing:.08em;
+                 display:block;line-height:1;margin-bottom:.15em}
+  .nro{font-size:2.6em;font-weight:800;line-height:1;letter-spacing:-.01em;
+       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Matriz sin numero (experimental, muestra, nueva): en el campo "numero" escriben el
      NOMBRE. Entonces el lugar del numero dice S/N -mas chico, porque no identifica nada-
      y lo que escribieron va al renglon del nombre, que es lo que si identifica. */
-  .nro.sn{font-size:4.2vh;color:#8b949e}
-  .nro{font-size:6vh;font-weight:800;line-height:1;letter-spacing:-.01em;
-       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .chips{display:flex;flex-direction:column;align-items:flex-end;gap:.6vh;flex:0 0 auto}
+  .nro.sn{font-size:1.8em;color:#8b949e}
+  .chips{display:flex;flex-direction:column;align-items:flex-end;gap:.3em;flex:0 0 auto}
   .estado{
-    font-size:1.8vh;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
-    padding:.5vh 1vw;border-radius:99px;white-space:nowrap;
+    font-size:.72em;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+    padding:.25em .8em;border-radius:99px;white-space:nowrap;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);
   }
   .quien{
-    font-size:1.8vh;font-weight:700;white-space:nowrap;color:#c9d1d9;
-    background:#21262d;border-radius:99px;padding:.4vh 1vw;
+    font-size:.72em;font-weight:700;white-space:nowrap;color:#c9d1d9;
+    background:#21262d;border-radius:99px;padding:.22em .8em;
   }
-  .sub-nombre{font-size:2.3vh;color:#8b949e;margin-top:.3vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sub-nombre{font-size:1em;color:#8b949e;margin-top:.15em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* Cuerpo: lo que se escribió en la planilla de Planify (problema, tarea a realizar,
      lo ya hecho) y, si la cargaron, la foto de la matriz. */
-  .cuerpo{flex:1 1 auto;display:flex;gap:1vw;min-height:0;margin-top:1vh;overflow:hidden}
-  .txts{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:.6vh;overflow:hidden}
+  .cuerpo{flex:1 1 auto;display:flex;gap:.6em;min-height:0;margin-top:.5em;overflow:hidden}
+  .txts{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:.3em;overflow:hidden}
   .bloque{min-width:0}
-  .bloque .lbl{font-size:1.5vh;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;display:block}
+  .bloque .lbl{font-size:.6em;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;display:block;line-height:1.1}
   .bloque .txt{
-    font-size:2.3vh;line-height:1.2;color:#e6edf3;
+    font-size:1em;line-height:1.2;color:#e6edf3;
     display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
   }
   .bloque.hecho .txt{color:#7ee787}
   .foto{
-    flex:0 0 auto;width:8.5vw;max-width:22%;height:100%;max-height:13vh;
-    object-fit:cover;border-radius:.9vh;border:.25vh solid #30363d;background:#0d1117;
+    flex:0 0 auto;width:6em;max-width:28%;height:100%;max-height:5.5em;
+    object-fit:cover;border-radius:.4em;border:1px solid #30363d;background:#0d1117;
   }
 
-  .fila2{display:flex;align-items:flex-end;gap:1.4vw;margin-top:1.1vh;padding-top:1vh;border-top:.25vh solid #21262d}
+  .fila2{display:flex;align-items:flex-end;gap:.9em;margin-top:.5em;padding-top:.45em;border-top:1px solid #21262d}
   .dato{display:flex;flex-direction:column;min-width:0}
-  .dato .lbl{font-size:1.5vh;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
-  .dato .val{font-size:3vh;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
-  .dias .val{font-size:4.6vh;font-weight:800}
+  .dato .lbl{font-size:.6em;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;line-height:1.1}
+  .dato .val{font-size:1.25em;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+  .dias .val{font-size:1.9em;font-weight:800}
   .dias.alerta .val,.salida.vencida .val{color:#ff7b72}
   .dias.aviso  .val,.salida.hoy     .val{color:#e3b341}
   .vacio{
-    grid-column:1/-1;display:flex;align-items:center;justify-content:center;
+    flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
   }
   .vacio .emoji{font-size:9vh}
@@ -101,9 +109,6 @@
     flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
     padding:1.1vh 2vw;border-top:.35vh solid #21262d;font-size:1.9vh;color:#8b949e;gap:2vw;
   }
-  .puntos{display:flex;gap:.7vw}
-  .puntos i{width:1.3vh;height:1.3vh;border-radius:50%;background:#30363d;display:block}
-  .puntos i.on{background:#58a6ff}
   #estadoConn.mal{color:#ff7b72;font-weight:700}
 
   /* Cartel de version vieja: rojo brillante, letras blancas, arriba de todo. Empuja el
@@ -117,36 +122,6 @@
   #cartelVer.on{display:block}
   @keyframes latir{0%,100%{background:#e5001d}50%{background:#ff2a3d}}
 
-  /* ── TV POR DISPOSITIVO (Roku / Fire TV / smart TV) ───────────────────────
-     Esos aparatos no abren un navegador de PC: informan una ventana chica
-     (la TV del taller: 962 x 485) y despues escalan la imagen al panel. No hay
-     F11 ni manera de sacarles la barra: se maneja con el control remoto. Como
-     todo el diseño esta en vh, la proporcion no cambia — lo que cambia es que
-     el alto disponible es la mitad y el ancho queda relativamente MAS grande
-     (962/485 = 1,98 contra 1,78 de un 1920x1080).
-     Entonces acá la TV pasa a 4 tarjetas (2x2, lo decide el JS) y con el doble
-     de ancho por tarjeta el texto entra en menos renglones: eso es lo que deja
-     subir toda la tipografia ~30% sin que nada se desborde. Se lee desde el
-     fondo del taller, que es de lo que se trata. */
-  @media (max-height: 600px){
-    .titulo h1{font-size:5.2vh}
-    .titulo .sub{font-size:2.6vh}
-    .reloj{font-size:5vh}
-    .reloj .fecha{font-size:2.2vh}
-    .res{font-size:2vh}
-    .res b{font-size:2.5vh}
-    .nro{font-size:7vh}
-    .nro.sn{font-size:4.6vh}
-    .estado,.quien{font-size:2.4vh}
-    .sub-nombre{font-size:3vh}
-    .bloque .lbl,.dato .lbl,.nro-caja .lbl{font-size:1.7vh}
-    .bloque .txt{font-size:2.7vh}
-    .dato .val{font-size:3.4vh}
-    .dias .val{font-size:5vh}
-    .foto{max-height:16vh}
-    footer{font-size:2.3vh}
-    .vacio{font-size:5vh}
-  }
 </style>
 </head>
 <body>
@@ -166,7 +141,6 @@
 
   <footer>
     <span id="estadoConn">Conectando…</span>
-    <div class="puntos" id="puntos"></div>
     <span id="pie">Se carga desde Planify · Matricería</span>
   </footer>
 
@@ -180,15 +154,12 @@
    Este archivo no escribe: la clave publishable sólo tiene SELECT sobre esa
    tabla y sobre el bucket de las fotos (los writes van por RPC, ver Planify).
    Parámetros por URL (opcionales):
-     ?porPantalla=6   cuántas matrices entran en una pantalla (default 6)
      ?refresco=30     cada cuántos segundos vuelve a pedir los datos
-     ?pagina=15       cada cuántos segundos rota si hay más de las que entran
-     ?columnas=3      columnas de la grilla
+     ?columnas=4      fuerza las columnas (por defecto las calcula sola)
      ?fotos=0         apaga las fotos (si la TV tiene poco ancho de banda)
-   En una ventana baja (<=600px de alto: Roku/Fire TV/smart TV, que informan algo
-   como 962x485) el default pasa solo a 4 tarjetas en 2 columnas y la hoja de
-   estilo agranda toda la tipografia, para que se lea desde el fondo del taller.
-   Igual se puede pisar con porPantalla y columnas.
+   TODAS las matrices del taller entran SIEMPRE en una sola pantalla: no hay
+   carrusel. La grilla y el tamaño de letra se calculan segun cuantas haya, asi
+   que con mas matrices las tarjetas se achican en vez de esconderse.
      ?res=1           muestra el lector de resolucion (apagado por defecto)
      ?autorecarga=0   deja el cartel rojo pero NO recarga sola la pagina
    ══════════════════════════════════════════════════════════════════════════ */
@@ -198,12 +169,8 @@ const BUCKET_FOTOS = 'planify_matriceria';
 
 const qs         = new URLSearchParams(location.search);
 const num        = (k, def) => { const v = parseInt(qs.get(k), 10); return Number.isFinite(v) && v > 0 ? v : def; };
-// Ventana baja = TV por dispositivo (ver el @media del CSS). Menos tarjetas y mas grandes.
-const VENT_BAJA  = window.innerHeight <= 600;
-const POR_PANT   = num('porPantalla', VENT_BAJA ? 4 : 6);
 const REFRESCO   = Math.max(5, num('refresco', 30)) * 1000;
-const PAGINA     = Math.max(5, num('pagina', 15)) * 1000;
-const COLUMNAS   = num('columnas', VENT_BAJA ? 2 : 3);
+const COLUMNAS   = num('columnas', 0);   // 0 = las calcula sola segun cuantas matrices hay
 const CON_FOTOS  = qs.get('fotos') !== '0';
 const VER_RES    = qs.get('res')   === '1';   // apagado por defecto: en la TV es ruido
 
@@ -215,7 +182,6 @@ const ESTADOS = {
 };
 
 let datos = [];        // última respuesta buena
-let pagina = 0;
 let ultimaOk = null;   // cuándo trajo datos por última vez
 const fotos = new Map(); // foto_path -> objectURL | 'cargando' | 'error'
 
@@ -265,7 +231,6 @@ async function actualizar(){
     ultimaOk = new Date();
     $('estadoConn').textContent = 'En línea · ' + ultimaOk.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
     $('estadoConn').className = '';
-    if (pagina * POR_PANT >= datos.length) pagina = 0;
     pintar();
     traerFotos();
   }catch(e){
@@ -382,46 +347,91 @@ function podarBloques(){
       if (hijos[i].getBoundingClientRect().bottom > limite - 1) hijos[i].remove();
       else break;
     }
+    // El problema no se saca nunca, pero si el solo no entra (tarjeta chica o texto largo)
+    // se le van recortando renglones hasta que entre. Mejor el problema cortado con puntos
+    // suspensivos que medio renglon tapado por el borde.
+    const primero = txts.firstElementChild;
+    const txt = primero && primero.querySelector('.txt');
+    if (txt){
+      let lineas = parseInt(txt.style.webkitLineClamp, 10) || 3;
+      while (lineas > 1 && primero.getBoundingClientRect().bottom > limite - 1){
+        lineas--;
+        txt.style.webkitLineClamp = String(lineas);
+      }
+    }
   });
+}
+
+// Una tarjeta llena mide 13 em de alto (numero + nombre + un bloque de texto + el pie) y
+// necesita 22 em de ancho para que el texto no se parta en migajas. De ahi salen las dos
+// divisiones de abajo: con el alto y el ancho de una celda, cual es la letra mas grande
+// que entra.
+const EM_ALTO = 13, EM_ANCHO = 22;
+const letraQueEntra = (cw, ch) => Math.min(ch / EM_ALTO, cw / EM_ANCHO);
+
+// Elige filas x columnas para que TODAS las matrices entren en una sola pantalla con la
+// letra MAS GRANDE posible. No hay carrusel: si hay mas matrices, las tarjetas se achican.
+function mejorGrilla(n, ancho, alto, gx, gy){
+  let mejor = { cols:1, filas:n, letra:0 };
+  for (let cols = 1; cols <= n; cols++){
+    const filas = Math.ceil(n / cols);
+    const cw = (ancho - gx * (cols  - 1)) / cols;
+    const ch = (alto  - gy * (filas - 1)) / filas;
+    if (cw <= 0 || ch <= 0) continue;
+    const letra = letraQueEntra(cw, ch);
+    if (letra > mejor.letra) mejor = { cols, filas, letra };
+  }
+  return mejor;
 }
 
 function pintar(){
   const grilla = $('grilla');
-  const filas  = Math.max(1, Math.ceil(POR_PANT / COLUMNAS));
-  grilla.style.gridTemplateColumns = `repeat(${COLUMNAS},1fr)`;
-  grilla.style.gridTemplateRows    = `repeat(${filas},1fr)`;
-
-  const paginas = Math.max(1, Math.ceil(datos.length / POR_PANT));
-  if (pagina >= paginas) pagina = 0;
-  const trozo = datos.slice(pagina * POR_PANT, pagina * POR_PANT + POR_PANT);
+  const n   = datos.length;
   const hoy = hoyServidor();
 
-  $('resumen').textContent = datos.length
-    ? datos.length + (datos.length === 1 ? ' matriz en el taller' : ' matrices en el taller')
+  $('resumen').textContent = n
+    ? n + (n === 1 ? ' matriz en el taller' : ' matrices en el taller')
     : 'sin matrices en el taller';
 
-  grilla.innerHTML = trozo.length
-    ? trozo.map(m => tarjeta(m, hoy)).join('')
-    : '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
+  if (!n){
+    grilla.style.removeProperty('--cw');
+    grilla.style.removeProperty('--ch');
+    grilla.innerHTML = '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
+    return;
+  }
+
+  // Tamaño real disponible para las tarjetas (ya descontados header, pie y padding).
+  const cs = getComputedStyle(grilla);
+  const gy = parseFloat(cs.rowGap)    || 0;
+  const gx = parseFloat(cs.columnGap) || 0;
+  const ancho = grilla.clientWidth  - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight)  || 0);
+  const alto  = grilla.clientHeight - (parseFloat(cs.paddingTop)  || 0) - (parseFloat(cs.paddingBottom) || 0);
+
+  const g     = COLUMNAS ? { cols: COLUMNAS, filas: Math.ceil(n / COLUMNAS) }
+                         : mejorGrilla(n, ancho, alto, gx, gy);
+  const cw    = (ancho - gx * (g.cols  - 1)) / g.cols;
+  const ch    = (alto  - gy * (g.filas - 1)) / g.filas;
+
+  // La letra sale del tamaño de la celda, no de la pantalla: una tarjeta chica trae letra
+  // chica, y todo lo de adentro (que esta en em) la acompaña. El piso de 9px es para que
+  // con muchisimas matrices siga siendo texto y no una mancha; lo que no entre lo saca
+  // podarBloques().
+  // Piso de 9 px: con muchisimas matrices tiene que seguir siendo texto y no una mancha.
+  // Lo que no entre a esa letra lo recorta podarBloques().
+  const fs = Math.max(9, letraQueEntra(cw, ch));
+  grilla.style.setProperty('--fs', fs.toFixed(2) + 'px');
+  // Se redondea para abajo: un pixel de mas y el navegador manda una tarjeta a otra fila.
+  grilla.style.setProperty('--cw', Math.floor(cw) + 'px');
+  grilla.style.setProperty('--ch', Math.floor(ch) + 'px');
+
+  grilla.innerHTML = datos.map(m => tarjeta(m, hoy)).join('');
 
   podarBloques();
   // Segunda pasada tras el reflow: en pantallas chicas el redondeo deja algun bloque
   // asomando por un pixel despues de la primera medicion.
   requestAnimationFrame(podarBloques);
-
-  $('puntos').innerHTML = paginas > 1
-    ? Array.from({length:paginas}, (_,i) => `<i class="${i===pagina?'on':''}"></i>`).join('')
-    : '';
-  $('pie').textContent = paginas > 1
-    ? `Pantalla ${pagina+1} de ${paginas} · se carga desde Planify → Matricería`
-    : 'Se carga desde Planify → Matricería';
 }
 
-// Resolucion REAL con la que se esta dibujando. Se muestran las dos medidas porque no son
-// lo mismo y el diseño depende de la primera: "ventana" es el area de la pagina (lo que
-// mide vh/vw, y baja si el navegador no esta en pantalla completa o tiene zoom) y
-// "pantalla" es lo que dice el monitor. Si difieren, antes de tocar el CSS hay que ver si
-// falta un F11 o sobra un zoom.
 function pintarRes(){
   const el = $('res');
   if (!el) return;
@@ -495,11 +505,8 @@ pintarRes();          window.addEventListener('resize', pintarRes);
 setTimeout(chequearVersion, 60000);  setInterval(chequearVersion, 600000);
 reloj();              setInterval(reloj, 10000);
 actualizar();         setInterval(actualizar, REFRESCO);
-// Rotación: sólo si hay MÁS matrices en el taller de las que entran en una pantalla.
-setInterval(() => {
-  const paginas = Math.ceil(datos.length / POR_PANT);
-  if (paginas > 1){ pagina = (pagina + 1) % paginas; pintar(); }
-}, PAGINA);
+// Si cambia el tamaño de la ventana hay que recalcular la grilla y la letra.
+window.addEventListener('resize', () => { if (datos.length) pintar(); });
 </script>
 </body>
 </html>

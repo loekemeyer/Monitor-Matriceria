@@ -41,8 +41,21 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 - **Un solo archivo**: `index.html`. Sin build, sin npm, sin dependencias. Se abre con
   doble clic (`file://`) o publicado por GitHub Pages; anda igual.
 - Pide los datos cada **30 s** (`fetch` a PostgREST con el header `Accept-Profile: planify`).
-- Entran **6 matrices por pantalla** (grilla 3×2, pensada para 1920×1080 a varios metros).
-  Si hay más de 6, **rota** de pantalla cada 15 s con los puntitos abajo.
+- **TODAS las matrices del taller entran en UNA pantalla. No hay carrusel** (Elías,
+  23/09/2026: *"no hacer un carrusel, achicar la pantalla en base a la cantidad de matrices
+  activas para mostrar todas"*). `mejorGrilla()` prueba cada combinación de filas × columnas
+  y se queda con la que permite la **letra más grande**; `letraQueEntra()` la calcula con
+  que una tarjeta llena mide **13 em de alto** (número + nombre + un bloque de texto + el
+  pie) y necesita **22 em de ancho**. Con 10 matrices en 962 × 485 da 4 × 3 y 9,8 px de
+  base; con 1 sola, una tarjeta de 938 × 396 con 30 px. `?columnas=N` fuerza las columnas.
+- **Todo lo de adentro de la tarjeta está en `em`**, sobre la variable `--fs` que pone el JS
+  según el tamaño de la celda. Por eso al haber más matrices se achica TODO junto y en
+  proporción, sin tocar una línea de CSS. Nada dentro de la tarjeta se mide en `vh`: si
+  alguien vuelve a meter `vh` ahí adentro, rompe esa proporción.
+- El contenedor es **flex con `wrap`**, no grid: con la última fila incompleta (10 matrices
+  en 4 columnas) las que sobran quedan **centradas** en vez de dejar un hueco a la derecha.
+  El ancho y el alto de cada tarjeta se redondean para abajo: un píxel de más y el navegador
+  manda una tarjeta a otra fila.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
   termina —o se cierra su tarea "Tratamiento matriz …" en Planify— desaparece sola.
 - Los **días de demora los calcula el servidor** (la vista, en hora Argentina), no el
@@ -58,12 +71,11 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   ella — en una TV jamás se rompe la pantalla por una imagen. Se apagan con `?fotos=0`.
 - ⚠ **La TV del taller NO es una PC**: entra por un aparato tipo **Roku**, con control
   remoto, sin F11 y sin manera de sacar la barra del navegador. Informa **ventana 962 × 485**,
-  pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). De ahí sale el
-  **`@media (max-height: 600px)`** del CSS: con esa ventana el JS pasa solo a **4 tarjetas
-  (2×2)** — `VENT_BAJA` — y la hoja de estilo sube toda la tipografía (texto 2,3 → 2,7vh).
-  Se puede medir el 17% de aumento porque con 2 columnas cada tarjeta tiene el DOBLE de ancho
-  y el texto entra en menos renglones; con 6 tarjetas y esa letra, "tarea a realizar" no
-  entraba. `porPantalla` y `columnas` por URL siguen pisando el default.
+  pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). Los 56 px de diferencia son la
+  barra del navegador, que no se puede sacar. Ya no hace falta ningún `@media` para eso: como
+  la letra sale del tamaño de la tarjeta y la tarjeta del espacio disponible, el diseño se
+  acomoda solo a cualquier pantalla. **Al probar un cambio hay que mirarlo a 962 × 485**, que
+  es la medida real del taller, no a 1920 × 1080.
 - ⚠ **`<meta name="monitor-version">` HAY QUE SUBIRLA EN CADA COMMIT que toque
   `index.html`.** La página baja cada 10 minutos el `index.html` publicado en GitHub Pages
   (sin caché), le lee esa meta y la compara con la de la copia que está corriendo. Si no
@@ -89,7 +101,9 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   que no entre ENTERO en la tarjeta se saca del DOM. Recorre los bloques **de abajo hacia
   arriba y corta en el primero que entra**, así se cae siempre lo menos importante (el orden
   del HTML es problema > tarea a realizar > ya hecho); al revés se podía borrar la tarea y
-  dejar el "ya hecho". El bloque del problema NO se saca nunca. Corre dos veces (la segunda
+  dejar el "ya hecho". El bloque del problema NO se saca nunca: si él solo no entra, se le
+  **recortan renglones** (`-webkit-line-clamp`) hasta que entre, que es lo que hace que la
+  tarjeta aguante 10 matrices en una TV de 962 × 485. Corre dos veces (la segunda
   en un `requestAnimationFrame`) porque en pantallas chicas el redondeo deja algún bloque
   asomando un píxel después de la primera medición. Por eso el diseño aguanta cualquier
   resolución sin retocar los `vh`.
@@ -100,15 +114,13 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 
 | Parámetro | Default | Qué hace |
 |---|---|---|
-| `porPantalla` | 6 | Cuántas matrices entran en una pantalla |
-| `columnas` | 3 | Columnas de la grilla |
+| `columnas` | auto | Fuerza las columnas (por defecto las calcula sola) |
 | `refresco` | 30 | Segundos entre consultas a Supabase |
-| `pagina` | 15 | Segundos que dura cada pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado por defecto) |
 | `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
 
-Ejemplo para una TV vertical: `index.html?columnas=2&porPantalla=6`.
+Ejemplo para una TV vertical: `index.html?columnas=2`.
 
 ## Estados
 
