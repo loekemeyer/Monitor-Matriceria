@@ -24,6 +24,14 @@
   .titulo .sub{font-size:2.2vh;color:#8b949e}
   .reloj{font-size:4.2vh;font-weight:700;font-variant-numeric:tabular-nums}
   .reloj .fecha{display:block;font-size:1.8vh;font-weight:400;color:#8b949e;text-align:right}
+  /* Lector de resolucion: esta para poder LEER de la TV con que medida se esta dibujando
+     y ajustar el diseño a esa pantalla. Se apaga con ?res=0 cuando ya no haga falta. */
+  .res{
+    font-size:1.7vh;font-variant-numeric:tabular-nums;color:#8b949e;text-align:right;
+    background:#161b22;border:.25vh solid #30363d;border-radius:.8vh;padding:.6vh 1vw;
+  }
+  .res b{color:#e6edf3;font-size:2.1vh;display:block}
+  .res.oculto{display:none}
 
   main{flex:1 1 auto;display:grid;gap:1.4vh 1.2vw;padding:1.6vh 1.2vw;min-height:0}
 
@@ -50,11 +58,11 @@
   /* Cuerpo: lo que se escribió en la planilla de Planify (problema, tarea a realizar,
      lo ya hecho) y, si la cargaron, la foto de la matriz. */
   .cuerpo{flex:1 1 auto;display:flex;gap:1vw;min-height:0;margin-top:1vh;overflow:hidden}
-  .txts{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:.8vh}
+  .txts{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:.6vh;overflow:hidden}
   .bloque{min-width:0}
   .bloque .lbl{font-size:1.5vh;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;display:block}
   .bloque .txt{
-    font-size:2.4vh;line-height:1.25;color:#e6edf3;
+    font-size:2.3vh;line-height:1.2;color:#e6edf3;
     display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
   }
   .bloque.hecho .txt{color:#7ee787}
@@ -92,7 +100,10 @@
       <h1>🛠️ MATRICERÍA</h1>
       <span class="sub" id="resumen">cargando…</span>
     </div>
-    <div class="reloj"><span id="hora">--:--</span><span class="fecha" id="fecha"></span></div>
+    <div style="display:flex;align-items:center;gap:1.2vw">
+      <div class="res" id="res"></div>
+      <div class="reloj"><span id="hora">--:--</span><span class="fecha" id="fecha"></span></div>
+    </div>
   </header>
 
   <main id="grilla"></main>
@@ -118,6 +129,7 @@
      ?pagina=15       cada cuántos segundos rota si hay más de las que entran
      ?columnas=3      columnas de la grilla
      ?fotos=0         apaga las fotos (si la TV tiene poco ancho de banda)
+     ?res=0           esconde el lector de resolucion del header
    ══════════════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://hrxfctzncixxqmpfhskv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BqpAgZH6ty-9wft10_YMhw_0rcIPuWT'; // clave PÚBLICA de solo lectura
@@ -130,6 +142,7 @@ const REFRESCO   = Math.max(5, num('refresco', 30)) * 1000;
 const PAGINA     = Math.max(5, num('pagina', 15)) * 1000;
 const COLUMNAS   = num('columnas', 3);
 const CON_FOTOS  = qs.get('fotos') !== '0';
+const VER_RES    = qs.get('res')   !== '0';
 
 const ESTADOS = {
   ingresada:  { txt:'Ingresada',  c:'#58a6ff', cb:'#132c4d' },
@@ -274,6 +287,19 @@ function tarjeta(m, hoy){
   </div>`;
 }
 
+// Ningun renglon cortado a la mitad: si un bloque de texto no entra ENTERO en la tarjeta,
+// se saca. El orden del HTML es el de importancia (problema > tarea > ya hecho), asi que lo
+// que se cae es siempre lo menos importante. Vale para cualquier resolucion: en una TV mas
+// chica se muestra menos, pero nunca media linea.
+function podarBloques(){
+  document.querySelectorAll('.card .txts').forEach(txts => {
+    const limite = txts.getBoundingClientRect().bottom;
+    [...txts.children].forEach(b => {
+      if (b.getBoundingClientRect().bottom > limite + 1) b.remove();
+    });
+  });
+}
+
 function pintar(){
   const grilla = $('grilla');
   const filas  = Math.max(1, Math.ceil(POR_PANT / COLUMNAS));
@@ -293,6 +319,8 @@ function pintar(){
     ? trozo.map(m => tarjeta(m, hoy)).join('')
     : '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
 
+  podarBloques();
+
   $('puntos').innerHTML = paginas > 1
     ? Array.from({length:paginas}, (_,i) => `<i class="${i===pagina?'on':''}"></i>`).join('')
     : '';
@@ -301,12 +329,32 @@ function pintar(){
     : 'Se carga desde Planify → Matricería';
 }
 
+// Resolucion REAL con la que se esta dibujando. Se muestran las dos medidas porque no son
+// lo mismo y el diseño depende de la primera: "ventana" es el area de la pagina (lo que
+// mide vh/vw, y baja si el navegador no esta en pantalla completa o tiene zoom) y
+// "pantalla" es lo que dice el monitor. Si difieren, antes de tocar el CSS hay que ver si
+// falta un F11 o sobra un zoom.
+function pintarRes(){
+  const el = $('res');
+  if (!el) return;
+  if (!VER_RES){ el.className = 'res oculto'; return; }
+  const vw = Math.round(window.innerWidth), vh = Math.round(window.innerHeight);
+  const sw = (window.screen && screen.width)  || 0;
+  const sh = (window.screen && screen.height) || 0;
+  const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
+  const igual = sw === vw && sh === vh;
+  el.innerHTML = `<b>${vw} × ${vh}</b>`
+    + (igual ? 'pantalla completa' : `pantalla ${sw} × ${sh}`)
+    + (dpr !== 1 ? ` · escala ${dpr}×` : '');
+}
+
 function reloj(){
   const n = new Date();
   $('hora').textContent  = n.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   $('fecha').textContent = n.toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'});
 }
 
+pintarRes();          window.addEventListener('resize', pintarRes);
 reloj();              setInterval(reloj, 10000);
 actualizar();         setInterval(actualizar, REFRESCO);
 // Rotación: sólo si hay MÁS matrices en el taller de las que entran en una pantalla.

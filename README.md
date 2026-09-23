@@ -51,6 +51,7 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 | `refresco` | 30 | Segundos entre consultas |
 | `pagina` | 15 | Segundos por pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos (TV con poco ancho de banda) |
+| `res` | 1 | `res=0` esconde el lector de resolución del header |
 
 ## Colores
 
@@ -68,6 +69,13 @@ con la fecha mal puesta no puede mentir.
 
 Si la matriz no tiene cargada la tarea, las HS, el quién o la salida estimada, esos renglones
 **no se muestran** en vez de mostrarse vacíos: la tarjeta sólo dice lo que hay.
+
+## Qué resolución está usando la TV
+
+Arriba, al lado del reloj, el monitor dice con qué medida se está dibujando: en grande la
+**ventana** (lo que miden las tarjetas: `vh`/`vw`) y abajo la **pantalla** del monitor. Si
+las dos no coinciden, falta **F11** o sobra zoom — eso se arregla antes de tocar el diseño.
+Cuando ya no haga falta verlo, se apaga con `?res=0`.
 
 ## Si la TV muestra "SIN CONEXIÓN"
 

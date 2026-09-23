@@ -56,6 +56,16 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   como `src` directo: se bajan con la clave (`fetch` + `objectURL`) **una sola vez por
   archivo** y quedan cacheadas en memoria. Si una foto falla, la tarjeta se dibuja igual sin
   ella — en una TV jamás se rompe la pantalla por una imagen. Se apagan con `?fotos=0`.
+- **Lector de resolución** al lado del reloj (`pintarRes()`): arriba la ventana
+  (`innerWidth × innerHeight`, que es lo que miden `vh`/`vw`) y abajo la pantalla
+  (`screen.width × height`) + la escala si el DPR no es 1. Está para poder LEER de la TV
+  con qué medida se dibuja y ajustar el diseño a esa pantalla; si ventana ≠ pantalla es que
+  falta F11 o sobra zoom, y eso se arregla antes de tocar el CSS. Se apaga con `?res=0`.
+- **Nada cortado a la mitad** (`podarBloques()`): después de pintar, todo bloque de texto
+  que no entre ENTERO en la tarjeta se saca del DOM. El orden del HTML es el de importancia
+  (problema > tarea a realizar > ya hecho), así que en una pantalla chica se pierde lo menos
+  importante, nunca media línea. Por eso el diseño aguanta cualquier resolución sin retocar
+  los `vh`.
 - Si se cae la red, **deja lo último que se vio en pantalla** y avisa `SIN CONEXIÓN` abajo
   a la izquierda. Una TV en blanco no le sirve a nadie.
 
@@ -68,6 +78,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `refresco` | 30 | Segundos entre consultas a Supabase |
 | `pagina` | 15 | Segundos que dura cada pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos |
+| `res` | 1 | `res=0` esconde el lector de resolución |
 
 Ejemplo para una TV vertical: `index.html?columnas=2&porPantalla=6`.
 
