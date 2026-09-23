@@ -7,8 +7,10 @@
 ## Qué es
 
 Un **visualizador** para la TV de 32" del taller: **un solo tablero fijo** con las matrices
-que están en matricería (número, nombre, día de ingreso, días de demora, motivo y estado).
-Sale de `planify.v_matriceria_monitor`.
+que están en matricería. Muestra **toda la planilla que se carga en Planify → 🛠️
+Matricería**: número, nombre, estado, problema (motivo + observaciones), tarea a realizar,
+lo ya hecho, quién, HS, salida estimada, día de ingreso, días de demora y la foto.
+Sale de `planify.v_matriceria_monitor` (+ el bucket `planify_matriceria` para las fotos).
 
 ⚠ **Acá NO va el contador de "unidades sin accidente".** Estuvo como segundo tablero unas
 horas del 16/09/2026 y el dueño lo sacó ese mismo día: *"eso no va acá… en matricería
@@ -21,6 +23,13 @@ decisión que ya se tomó al revés: preguntar antes de volver a agregarlo.
 Martín Cornejo (34) desde Planify → módulo **"🛠️ Matricería"**, que escribe en
 `planify.matrices_ingresos` del proyecto Supabase `hrxfctzncixxqmpfhskv`. Este repo sólo
 LEE la vista `planify.v_matriceria_monitor`.
+
+⚠ **El contrato es la VISTA, no la tabla.** La vista ya expone las columnas que sumó el
+módulo unificado (`tarea`, `tarea_realizada`, `hs`, `quien`, `salida_estimada`, `foto_path`,
+`nombre_matriz`) y el monitor pide `select=*`, así que **una columna nueva en la vista llega
+sola**; lo que hay que tocar acá es sólo el dibujo de la tarjeta (`tarjeta()` en
+`index.html`). Si alguien agrega un campo en Planify y NO lo agrega a la vista, la TV no lo
+ve nunca.
 
 Que sea de solo lectura no es una convención, está impuesto por la base: la clave
 publishable que viaja en `index.html` tiene **únicamente SELECT** sobre esa tabla (los
@@ -37,7 +46,16 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
   termina —o se cierra su tarea "Tratamiento matriz …" en Planify— desaparece sola.
 - Los **días de demora los calcula el servidor** (la vista, en hora Argentina), no el
-  navegador: una TV con la fecha mal puesta no puede mentir con la demora.
+  navegador: una TV con la fecha mal puesta no puede mentir con la demora. La **salida
+  estimada vencida** usa el mismo reloj sin pedir nada más: para una matriz que sigue en el
+  taller, `fecha_ingreso + dias_demora` **es** el día de hoy del servidor (`hoyServidor()`).
+- Lo que está **vacío no se dibuja**: sin tarea cargada, el problema se estira a 3 líneas;
+  sin HS / salida / quién, esos renglones no ocupan lugar. Así la tarjeta no se llena de
+  guiones.
+- Las **fotos** viven en el bucket PRIVADO `planify_matriceria`, así que no se pueden poner
+  como `src` directo: se bajan con la clave (`fetch` + `objectURL`) **una sola vez por
+  archivo** y quedan cacheadas en memoria. Si una foto falla, la tarjeta se dibuja igual sin
+  ella — en una TV jamás se rompe la pantalla por una imagen. Se apagan con `?fotos=0`.
 - Si se cae la red, **deja lo último que se vio en pantalla** y avisa `SIN CONEXIÓN` abajo
   a la izquierda. Una TV en blanco no le sirve a nadie.
 
@@ -49,6 +67,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `columnas` | 3 | Columnas de la grilla |
 | `refresco` | 30 | Segundos entre consultas a Supabase |
 | `pagina` | 15 | Segundos que dura cada pantalla cuando hay más de las que entran |
+| `fotos` | 1 | `fotos=0` apaga las fotos |
 
 Ejemplo para una TV vertical: `index.html?columnas=2&porPantalla=6`.
 
