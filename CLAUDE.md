@@ -80,10 +80,17 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   `.c-prob span` a 16 y `.c-estado em` a 12, con puntos suspensivos. Medido a 962×485 con las
   11 matrices: 835 px de tabla y **16,5 px de letra**, igual que sin la columna; con un motivo
   y una espera largos a propósito, 888 px y **los mismos 16,5 px**.
-  ⚠ En el renglón que espera algo, el chip queda corrido a la izquierda respecto de los demás:
-  el contenido de la celda va centrado y ahí hay dos cosas en vez de una. Es a propósito —
-  alinearlos exigía dejar ~180 px vacíos en los otros diez renglones, que es justo el "espacio
-  muerto" que el formato prohíbe — y de paso hace saltar a la vista la que está frenada.
+  **El renglón que espera algo ocupa DOS líneas** (Elías, 23/09/2026: *"que toda esa línea
+  ocupe 2, o sea doble línea"*). Abajo, centrado, va **Espera: ‹texto›**, con el rótulo en el
+  color del estado. La fila es un `flex` en **columna**: adentro `.linea` (las cinco celdas) y,
+  sólo si hace falta, `.linea2`. Con eso el chip vuelve a estar alineado con el de los demás
+  renglones y la columna Estado vuelve a medir lo que mide un chip — antes el texto compartía
+  celda con el chip, se lo llevaba a la izquierda y ensanchaba la columna para todos.
+  ⚠ **Cada renglón doble cuesta tamaño de letra**, porque el que manda es el alto. Medido a
+  962×485 con las 11 matrices: 0 esperas **16,5 px**, 1 espera **15,7 px**, 3 esperas
+  **14,4 px**. No hay que afinar `EM_LIN2` a mano: la segunda pasada de `pintar()` **mide** lo
+  que ocupó la tabla de verdad —ancho y alto— y corrige; la constante es sólo la primera
+  estimación.
 - **Abreviaturas de la descripción** (`ABREVIATURAS`): hoy sólo `corte` → `C/`, que es la
   palabra que más se repite en el maestro. Sumar otra es agregar un par a esa lista.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se

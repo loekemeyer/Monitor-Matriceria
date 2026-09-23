@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.13">
+<meta name="monitor-version" content="2026-09-23.14">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -66,10 +66,22 @@
   .tabla{display:flex;flex-direction:column;font-size:var(--fs,16px);width:auto;max-width:100%}
   .th{display:flex;align-items:flex-end;gap:.55em;padding:0 .9em .3em}
   .th span{font-size:1.14em;color:#8b949e;line-height:1;white-space:nowrap;text-align:center}
+  /* La fila es una COLUMNA: adentro va .linea (las cinco celdas) y, solo cuando la matriz
+     espera algo, una .linea2 con que espera. Asi el chip de estado queda alineado con el de
+     los demas renglones (antes se corria porque compartia celda con el texto) y la columna
+     Estado vuelve a medir lo que mide un chip, sin espacio muerto en los otros renglones. */
   .fila{
-    display:flex;align-items:center;gap:.55em;padding:.3em .9em;margin-bottom:.16em;
+    display:flex;flex-direction:column;margin-bottom:.16em;
     background:#161b22;border-radius:.35em;position:relative;overflow:hidden;
   }
+  .linea{display:flex;align-items:center;gap:.55em;padding:.3em .9em}
+  /* Segunda linea: centrada como el resto del cuadro, con el rotulo en el color del estado
+     para que se lea de una que es la continuacion de ese chip. */
+  .linea2{
+    padding:0 .9em .34em;margin-top:-.12em;text-align:center;
+    font-size:.85em;color:#adbac7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .linea2 b{color:var(--c,#58a6ff);font-weight:800}
   .fila:last-child{margin-bottom:0}
   .fila::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.28em;background:var(--c,#58a6ff)}
   /* La demora no ocupa columna: se ve en el color de la fecha, como en el resto de la app. */
@@ -95,9 +107,7 @@
   .c-desc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18em}
   .c-prob span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16em}
   .c-estado{flex:0 0 var(--w-estado,auto);gap:.4em}
-  /* Que se esta esperando: sin eso, "Esperando" no le dice a nadie que falta. */
-  .c-estado em{font-style:normal;font-size:.8em;color:#8b949e;white-space:nowrap;
-               overflow:hidden;text-overflow:ellipsis;max-width:12em}
+
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
@@ -241,14 +251,19 @@ function fila(m, i){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
   const clase = d >= 7 ? 'alerta' : (d >= 3 ? 'aviso' : '');
-  // Si esta esperando algo, va al lado del chip: "Esperando" solo no dice que falta.
+  // Si esta esperando algo, el renglon ocupa DOS lineas y abajo dice que espera (pedido de
+  // Elias): "Esperando" solo no le dice a nadie que falta, y ponerlo al lado del chip
+  // descolocaba el chip respecto de los demas renglones.
   const espera = m.estado === 'esperando' ? String(m.espera || '').trim() : '';
   return `<div class="fila ${clase}" style="--c:${e.c};--cb:${e.cb}">`
-       + `<div class="c-prio"><span>${i + 1}</span></div>`
-       + `<div class="c-fecha"><span>${fecha(m.fecha_ingreso)}</span></div>`
-       + `<div class="c-desc"><span>${esc(descripcion(m))}</span></div>`
-       + `<div class="c-prob"><span>${esc(String(m.motivo || '').trim() || '—')}</span></div>`
-       + `<div class="c-estado"><span><i>${e.txt}</i>${espera ? `<em>${esc(espera)}</em>` : ''}</span></div>`
+       + `<div class="linea">`
+       +   `<div class="c-prio"><span>${i + 1}</span></div>`
+       +   `<div class="c-fecha"><span>${fecha(m.fecha_ingreso)}</span></div>`
+       +   `<div class="c-desc"><span>${esc(descripcion(m))}</span></div>`
+       +   `<div class="c-prob"><span>${esc(String(m.motivo || '').trim() || '—')}</span></div>`
+       +   `<div class="c-estado"><span><i>${e.txt}</i></span></div>`
+       + `</div>`
+       + (espera ? `<div class="linea2"><b>Espera:</b> ${esc(espera)}</div>` : '')
        + `</div>`;
 }
 
@@ -264,7 +279,7 @@ function ajustarColumnas(cont){
     // hoy el dato gana en las cuatro columnas y el ancho sale del dato, como pide el formato.
     // El max() queda igual de red de seguridad: si manana un titulo se alarga, la columna lo
     // respeta en vez de dejar un encabezado pisando al de al lado.
-    tabla.querySelectorAll('.fila .c-' + col + ' span, .th .c-' + col).forEach(el => {
+    tabla.querySelectorAll('.linea .c-' + col + ' span, .th .c-' + col).forEach(el => {
       max = Math.max(max, el.getBoundingClientRect().width);
     });
     if (max) tabla.style.setProperty('--w-' + col, Math.ceil(max) + 'px');
@@ -272,6 +287,7 @@ function ajustarColumnas(cont){
 }
 
 const EM_FILA  = 1.95;   // alto de un renglon con su relleno y su separacion, en em
+const EM_LIN2  = 1.15;   // lo que suma la segunda linea del renglon que espera algo
 const EM_TH    = 2.6;    // el encabezado, con el titulo a 1,14em y lugar para dos lineas
 const EM_ANCHO = 38;     // prioridad + fecha + estado + separaciones + lo minimo de descripcion y problema
 const FS_MAX   = 40;     // con una o dos matrices, que no quede un renglon gigante
@@ -295,8 +311,10 @@ function pintar(){
 
   // Tabla solo con 3 filas o mas; con menos va como lista, sin encabezado.
   const conTitulos = n >= 3;
+  // Los renglones que esperan algo ocupan DOS lineas, asi que cuentan por mas alto.
+  const dobles = datos.filter(m => m.estado === 'esperando' && String(m.espera || '').trim()).length;
   const fs = Math.max(9, Math.min(FS_MAX,
-                                  alto / (n * EM_FILA + (conTitulos ? EM_TH : 0)),
+                                  alto / (n * EM_FILA + dobles * EM_LIN2 + (conTitulos ? EM_TH : 0)),
                                   ancho / EM_ANCHO));
 
   cont.innerHTML = `<div class="tabla" style="--fs:${fs.toFixed(2)}px">`
@@ -308,13 +326,18 @@ function pintar(){
     + datos.map((m, i) => fila(m, i)).join('')
     + '</div>';
 
-  // Segunda pasada por el ANCHO: con las columnas ya medidas, si la descripcion mas larga
-  // no entra a lo ancho se achica la letra hasta que entre (en vez de cortar el texto).
+  // Segunda pasada, por ANCHO y por ALTO. Ancho: con las columnas ya medidas, si la
+  // descripcion mas larga no entra se achica la letra en vez de cortar el texto. Alto: el
+  // calculo de arriba es una estimacion en em (EM_FILA / EM_LIN2) y los renglones de dos
+  // lineas la vuelven menos exacta, asi que se MIDE lo que ocupo de verdad y se corrige.
+  // Medir es mas confiable que afinar las constantes: si manana se agrega otra linea, esto
+  // sigue andando solo.
   ajustarColumnas(cont);
   const tabla = cont.querySelector('.tabla');
-  const natural = tabla.getBoundingClientRect().width;
-  if (natural > ancho){
-    const fs2 = Math.max(9, fs * (ancho / natural));
+  const caja  = tabla.getBoundingClientRect();
+  const sobra = Math.min(ancho / caja.width, alto / caja.height);
+  if (sobra < 1){
+    const fs2 = Math.max(9, fs * sobra);
     tabla.style.setProperty('--fs', fs2.toFixed(2) + 'px');
     ['prio','fecha','desc','prob','estado'].forEach(c => tabla.style.removeProperty('--w-' + c));
     ajustarColumnas(cont);
