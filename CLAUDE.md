@@ -6,11 +6,15 @@
 
 ## Qué es
 
-Un **visualizador** para la TV de 32" del taller: **un solo tablero fijo** con las matrices
-que están en matricería. Muestra **toda la planilla que se carga en Planify → 🛠️
-Matricería**: número, nombre, estado, problema (motivo + observaciones), tarea a realizar,
-lo ya hecho, quién, HS, salida estimada, día de ingreso, días de demora y la foto.
-Sale de `planify.v_matriceria_monitor` (+ el bucket `planify_matriceria` para las fotos).
+Un **visualizador** para la TV de 32" del taller: **un renglón por matriz**, con
+**Ingreso · Descripción · Estado**, en el **formato de cuadro sinóptico** de la casa.
+Sale de `planify.v_matriceria_monitor`.
+
+⚠ **El número de matriz NO se muestra** (Elías, 23/09/2026). Si lo cargaron, se muestra la
+**descripción** que trae el maestro; si escribieron texto libre —matriz experimental, muestra,
+recién hecha, que no está en `public."Matrices"`— ese texto **es** la descripción. El número
+se sigue usando **en Planify**, para que la misma matriz no termine cargada con una
+descripción distinta cada vez. Hoy 6 de las 10 matrices del taller no tienen número.
 
 ⚠ **Acá NO va el contador de "unidades sin accidente".** Estuvo como segundo tablero unas
 horas del 16/09/2026 y el dueño lo sacó ese mismo día: *"eso no va acá… en matricería
@@ -41,41 +45,36 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 - **Un solo archivo**: `index.html`. Sin build, sin npm, sin dependencias. Se abre con
   doble clic (`file://`) o publicado por GitHub Pages; anda igual.
 - Pide los datos cada **30 s** (`fetch` a PostgREST con el header `Accept-Profile: planify`).
-- **TODAS las matrices del taller entran en UNA pantalla. No hay carrusel** (Elías,
-  23/09/2026: *"no hacer un carrusel, achicar la pantalla en base a la cantidad de matrices
-  activas para mostrar todas"*). `mejorGrilla()` prueba cada combinación de filas × columnas
-  y se queda con la que permite la **letra más grande**; `letraQueEntra()` la calcula con
-  que una tarjeta llena mide **13 em de alto** (número + nombre + un bloque de texto + el
-  pie) y necesita **22 em de ancho**. Con 10 matrices en 962 × 485 da 4 × 3 y 9,8 px de
-  base; con 1 sola, una tarjeta de 938 × 396 con 30 px. `?columnas=N` fuerza las columnas.
-- **Todo lo de adentro de la tarjeta está en `em`**, sobre la variable `--fs` que pone el JS
-  según el tamaño de la celda. Por eso al haber más matrices se achica TODO junto y en
-  proporción, sin tocar una línea de CSS. Nada dentro de la tarjeta se mide en `vh`: si
-  alguien vuelve a meter `vh` ahí adentro, rompe esa proporción.
-- El contenedor es **flex con `wrap`**, no grid: con la última fila incompleta (10 matrices
-  en 4 columnas) las que sobran quedan **centradas** en vez de dejar un hueco a la derecha.
-  El ancho y el alto de cada tarjeta se redondean para abajo: un píxel de más y el navegador
-  manda una tarjeta a otra fila.
+- **Todas las matrices entran en una sola pantalla. No hay carrusel** (Elías, 23/09/2026:
+  *"no hacer un carrusel, achicar la pantalla en base a la cantidad de matrices activas para
+  mostrar todas"*). El tamaño de letra sale de cuántos renglones hay: `fs = alto / (n × 1,85
+  em + encabezado)`, y una segunda pasada lo achica más si la descripción más larga no entra
+  a lo ancho. Con 10 matrices en 962 × 485 da 18,8 px — el doble de lo que se leía cuando
+  eran tarjetas.
+- **El formato es el del cuadro sinóptico**, y se aplica entero (Elías: *"no excluyas ni
+  omitas ninguna regla"*):
+  - **Ancho de columna según el DATO, no según el título**: `ajustarColumnas()` mide lo que
+    ocupan de verdad las celdas y deja la columna del ancho del valor más largo. El título,
+    si no entra, se parte en dos líneas (`.th span` va con `white-space:normal`).
+  - **Título más grande que el contenido** (16 contra 14): `.th span` va a `1.14em`.
+  - **Centrado horizontal y vertical**, en las celdas y en la tabla entera.
+  - **Sin ancho fijo y sin columnas vacías**: la tabla es `width:auto`, queda del ancho de
+    sus datos y el `<main>` la centra. Columnas próximas, sin ancho sobrante.
+  - ⚠ **El "sin color / sin relleno" del formato NO se aplica acá**, por decisión de Elías
+    (23/09/2026): *"en este caso por el color y el relleno seguí la estética de la página"*.
+    Por eso el renglón conserva el fondo, la barra del estado a la izquierda y el chip de
+    color, y la fecha se pinta ámbar a los 3 días y roja a los 7. Es una excepción **pedida**,
+    no un olvido: el resto del formato se cumple tal cual.
+  - **Ordenado por gravedad, de mayor a menor**: lo trae la consulta, por `dias_demora desc`.
+  - **Tabla sólo con 3 filas o más**; con menos va como lista, sin encabezado (`conTitulos`).
+- **Abreviaturas de la descripción** (`ABREVIATURAS`): hoy sólo `corte` → `C/`, que es la
+  palabra que más se repite en el maestro. Sumar otra es agregar un par a esa lista.
 - Muestra sólo lo que está EN el taller (`estado != terminada`). Cuando la matriz se
   termina —o se cierra su tarea "Tratamiento matriz …" en Planify— desaparece sola.
-- Los **días de demora los calcula el servidor** (la vista, en hora Argentina), no el
-  navegador: una TV con la fecha mal puesta no puede mentir con la demora. La **salida
-  estimada vencida** usa el mismo reloj sin pedir nada más: para una matriz que sigue en el
-  taller, `fecha_ingreso + dias_demora` **es** el día de hoy del servidor (`hoyServidor()`).
-- Lo que está **vacío no se dibuja**: sin tarea cargada, el problema se estira a 3 líneas;
-  sin HS / salida / quién, esos renglones no ocupan lugar. Así la tarjeta no se llena de
-  guiones.
-- Las **fotos** viven en el bucket PRIVADO `planify_matriceria`, así que no se pueden poner
-  como `src` directo: se bajan con la clave (`fetch` + `objectURL`) **una sola vez por
-  archivo** y quedan cacheadas en memoria. Si una foto falla, la tarjeta se dibuja igual sin
-  ella — en una TV jamás se rompe la pantalla por una imagen. Se apagan con `?fotos=0`.
-- ⚠ **La TV del taller NO es una PC**: entra por un aparato tipo **Roku**, con control
-  remoto, sin F11 y sin manera de sacar la barra del navegador. Informa **ventana 962 × 485**,
-  pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). Los 56 px de diferencia son la
-  barra del navegador, que no se puede sacar. Ya no hace falta ningún `@media` para eso: como
-  la letra sale del tamaño de la tarjeta y la tarjeta del espacio disponible, el diseño se
-  acomoda solo a cualquier pantalla. **Al probar un cambio hay que mirarlo a 962 × 485**, que
-  es la medida real del taller, no a 1920 × 1080.
+- **Cinco estados**: `ingresada` → Ingresado · `en_proceso` → Proceso · `ver_damian` →
+  Ver Damián · `esperando` → Esperando · `terminada` → Terminada (no se muestra). Agregar uno
+  toca CUATRO lugares: el `check` de `planify.matrices_ingresos`, la RPC
+  `planify_matriz_estado`, la lista `MAT_ESTADOS` de Planify y el objeto `ESTADOS` de acá.
 - ⚠ **`<meta name="monitor-version">` HAY QUE SUBIRLA EN CADA COMMIT que toque
   `index.html`.** La página baja cada 10 minutos el `index.html` publicado en GitHub Pages
   (sin caché), le lee esa meta y la compara con la de la copia que está corriendo. Si no
@@ -85,42 +84,29 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   pidiendo recarga a mano. Sin subir la meta, el aviso no salta nunca y la TV puede quedar
   semanas con una copia vieja — que es exactamente lo que pasó el 23/09/2026, dos veces en
   la misma tarde.
-- **Matriz sin número** (experimental, muestra, recién hecha): en Planify escriben el
-  NOMBRE en el campo "Número de matriz". `esNumeroDeMatriz()` toma como número sólo dígitos
-  con una letra opcional al final (`344`, `12A`); cualquier otra cosa es un nombre, así que
-  el lugar del número dice **S/N** (más chico y gris, porque no identifica nada) y lo
-  escrito va al renglón del nombre, que es lo que sí identifica.
-- **El número grande lleva la etiqueta MATRIZ arriba.** Sin ella, un "2" solo se lee como
-  una cantidad, no como el número de la matriz (pasó de verdad: Elías preguntó "2 qué?" el
-  23/09/2026 mirando la TV). Cuesta casi nada (`line-height:1`) y se pagó bajando el número
-  de 6,4 a 6vh en pantallas grandes.
+- ⚠ **La TV del taller NO es una PC**: entra por un aparato tipo **Roku**, con control
+  remoto, sin F11 y sin manera de sacar la barra del navegador. Informa **ventana 962 × 485**,
+  pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). **Al probar un cambio hay que
+  mirarlo a 962 × 485**, que es la medida real del taller, no a 1920 × 1080.
 - **Lector de resolución** al lado del reloj (`pintarRes()`): **apagado por defecto**, se
   prende con `?res=1`. Muestra ventana, pantalla y escala; sirve para medir una pantalla
-  nueva antes de tocar el CSS. En la TV va apagado porque es ruido.
-- **Nada cortado a la mitad** (`podarBloques()`): después de pintar, todo bloque de texto
-  que no entre ENTERO en la tarjeta se saca del DOM. Recorre los bloques **de abajo hacia
-  arriba y corta en el primero que entra**, así se cae siempre lo menos importante (el orden
-  del HTML es problema > tarea a realizar > ya hecho); al revés se podía borrar la tarea y
-  dejar el "ya hecho". El bloque del problema NO se saca nunca: si él solo no entra, se le
-  **recortan renglones** (`-webkit-line-clamp`) hasta que entre, que es lo que hace que la
-  tarjeta aguante 10 matrices en una TV de 962 × 485. Corre dos veces (la segunda
-  en un `requestAnimationFrame`) porque en pantallas chicas el redondeo deja algún bloque
-  asomando un píxel después de la primera medición. Por eso el diseño aguanta cualquier
-  resolución sin retocar los `vh`.
+  nueva antes de tocar el CSS.
 - Si se cae la red, **deja lo último que se vio en pantalla** y avisa `SIN CONEXIÓN` abajo
   a la izquierda. Una TV en blanco no le sirve a nadie.
+- **Lo que ya NO se muestra** (estuvo unas horas el 23/09/2026 y lo sacó el formato de una
+  línea): número de matriz, tarea a realizar, ya hecho, quién, HS, salida estimada y la foto.
+  El bucket `planify_matriceria` sigue existiendo y Planify sigue guardando fotos; la TV
+  simplemente no las pide.
 
 ### Parámetros por URL (opcionales)
 
 | Parámetro | Default | Qué hace |
 |---|---|---|
-| `columnas` | auto | Fuerza las columnas (por defecto las calcula sola) |
 | `refresco` | 30 | Segundos entre consultas a Supabase |
-| `fotos` | 1 | `fotos=0` apaga las fotos |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado por defecto) |
 | `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
 
-Ejemplo para una TV vertical: `index.html?columnas=2`.
+La grilla ya no se elige a mano: el cuadro ocupa lo que necesita y se centra.
 
 ## Estados
 

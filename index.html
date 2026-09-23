@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.7">
+<meta name="monitor-version" content="2026-09-23.9">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -40,65 +40,47 @@
   /* Flex en vez de grid: con la ultima fila incompleta (10 matrices en 4 columnas) las que
      quedan se CENTRAN en vez de dejar un hueco a la derecha. Las medidas de cada tarjeta
      las calcula el JS para que entren todas. */
-  main{flex:1 1 auto;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;
-       gap:1.4vh 1.2vw;padding:1.6vh 1.2vw;min-height:0;overflow:hidden}
+  main{flex:1 1 auto;display:flex;align-items:center;justify-content:center;
+       padding:1.6vh 2vw;min-height:0;overflow:hidden}
 
-  /* La tarjeta se mide en EM sobre --fs, que calcula el JS segun el tamaño de la celda:
-     asi, con mas matrices en pantalla, TODO (numero, etiquetas, textos) se achica junto y
-     en proporcion. No hay tamaños atados a la pantalla aca adentro. */
-  .card{
-    font-size:var(--fs,14px);flex:0 0 var(--cw,auto);height:var(--ch,auto);
-    background:#161b22;border:1px solid #30363d;border-radius:.6em;
-    padding:.75em .9em;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden;
+  /* UN RENGLON POR MATRIZ, CON EL FORMATO DE CUADRO SINOPTICO (pedido de Elias,
+     23/09/2026: "se va a ver todo en una linea con fecha ingreso, descripcion y estado" +
+     "aplicar el formato de cuadro sinoptico, sin excluir ninguna regla"). De ese formato
+     salen, una por una:
+       - ancho de columna segun el DATO, no segun el titulo  -> lo mide ajustarColumnas()
+       - titulo mas grande que el contenido (16 contra 14)   -> .th span va a 1.14em
+       - centrado horizontal y vertical                      -> en las celdas y en la tabla
+       - sin ancho fijo, sin columnas vacias
+     EXCEPCION pedida por Elias: "por el color y el relleno segui la estetica de la pagina".
+     O sea que el cuadro conserva el fondo de los renglones, la barra del estado y el chip
+     de color; el resto del formato se cumple tal cual.
+       - ordenado por gravedad de mayor a menor              -> lo trae la consulta, por demora
+       - tabla solo con 3 filas o mas; con menos, lista      -> con n<3 no se dibuja el encabezado
+     Todo en EM sobre --fs, que calcula el JS segun cuantos renglones hay. */
+  /* width:auto y columnas medidas = columnas proximas, sin ancho sobrante. La tabla queda
+     del ancho de sus datos y el <main> la centra en la pantalla. */
+  .tabla{display:flex;flex-direction:column;font-size:var(--fs,16px);width:auto;max-width:100%}
+  .th{display:flex;align-items:flex-end;gap:1em;padding:0 .9em .3em}
+  .th span{font-size:1.14em;color:#8b949e;line-height:1;white-space:normal;text-align:center}
+  .fila{
+    display:flex;align-items:center;gap:1em;padding:.3em .9em;margin-bottom:.16em;
+    background:#161b22;border-radius:.35em;position:relative;overflow:hidden;
   }
-  .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.4em;background:var(--c,#58a6ff)}
-  .card .fila1{display:flex;align-items:flex-start;justify-content:space-between;gap:.6em}
-  /* El numero solo no se entiende: un "2" grande puede leerse como una cantidad.
-     La etiqueta MATRIZ arriba lo aclara y casi no ocupa lugar (line-height 1). */
-  .nro-caja{min-width:0}
-  .nro-caja .lbl{font-size:.6em;color:#8b949e;text-transform:uppercase;letter-spacing:.08em;
-                 display:block;line-height:1;margin-bottom:.15em}
-  .nro{font-size:2.6em;font-weight:800;line-height:1;letter-spacing:-.01em;
-       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  /* Matriz sin numero (experimental, muestra, nueva): en el campo "numero" escriben el
-     NOMBRE. Entonces el lugar del numero dice S/N -mas chico, porque no identifica nada-
-     y lo que escribieron va al renglon del nombre, que es lo que si identifica. */
-  .nro.sn{font-size:1.8em;color:#8b949e}
-  .chips{display:flex;flex-direction:column;align-items:flex-end;gap:.3em;flex:0 0 auto}
-  .estado{
-    font-size:.72em;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
-    padding:.25em .8em;border-radius:99px;white-space:nowrap;
-    background:var(--cb,#1f3350);color:var(--c,#58a6ff);
+  .fila:last-child{margin-bottom:0}
+  .fila::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.28em;background:var(--c,#58a6ff)}
+  /* La demora no ocupa columna: se ve en el color de la fecha, como en el resto de la app. */
+  .fila.aviso  .c-fecha{color:#e3b341}
+  .fila.alerta .c-fecha{color:#ff7b72}
+  .c-estado i{
+    font-style:normal;display:inline-block;padding:.12em .7em;border-radius:99px;
+    font-size:.8em;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
+    background:var(--cb,#1f3350);color:var(--c,#58a6ff);white-space:nowrap;
   }
-  .quien{
-    font-size:.72em;font-weight:700;white-space:nowrap;color:#c9d1d9;
-    background:#21262d;border-radius:99px;padding:.22em .8em;
-  }
-  .sub-nombre{font-size:1em;color:#8b949e;margin-top:.15em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-  /* Cuerpo: lo que se escribió en la planilla de Planify (problema, tarea a realizar,
-     lo ya hecho) y, si la cargaron, la foto de la matriz. */
-  .cuerpo{flex:1 1 auto;display:flex;gap:.6em;min-height:0;margin-top:.5em;overflow:hidden}
-  .txts{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:.3em;overflow:hidden}
-  .bloque{min-width:0}
-  .bloque .lbl{font-size:.6em;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;display:block;line-height:1.1}
-  .bloque .txt{
-    font-size:1em;line-height:1.2;color:#e6edf3;
-    display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;
-  }
-  .bloque.hecho .txt{color:#7ee787}
-  .foto{
-    flex:0 0 auto;width:6em;max-width:28%;height:100%;max-height:5.5em;
-    object-fit:cover;border-radius:.4em;border:1px solid #30363d;background:#0d1117;
-  }
-
-  .fila2{display:flex;align-items:flex-end;gap:.9em;margin-top:.5em;padding-top:.45em;border-top:1px solid #21262d}
-  .dato{display:flex;flex-direction:column;min-width:0}
-  .dato .lbl{font-size:.6em;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;line-height:1.1}
-  .dato .val{font-size:1.25em;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
-  .dias .val{font-size:1.9em;font-weight:800}
-  .dias.alerta .val,.salida.vencida .val{color:#ff7b72}
-  .dias.aviso  .val,.salida.hoy     .val{color:#e3b341}
+  .c-fecha, .c-desc, .c-estado{display:flex;align-items:center;justify-content:center;min-width:0}
+  .c-fecha {flex:0 0 var(--w-fecha,auto);font-variant-numeric:tabular-nums}
+  .c-desc  {flex:0 0 var(--w-desc,auto);justify-content:center}
+  .c-desc span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .c-estado{flex:0 0 var(--w-estado,auto)}
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:2vh;color:#8b949e;font-size:4vh;text-align:center;
@@ -156,7 +138,6 @@
    Parámetros por URL (opcionales):
      ?refresco=30     cada cuántos segundos vuelve a pedir los datos
      ?columnas=4      fuerza las columnas (por defecto las calcula sola)
-     ?fotos=0         apaga las fotos (si la TV tiene poco ancho de banda)
    TODAS las matrices del taller entran SIEMPRE en una sola pantalla: no hay
    carrusel. La grilla y el tamaño de letra se calculan segun cuantas haya, asi
    que con mas matrices las tarjetas se achican en vez de esconderse.
@@ -165,31 +146,40 @@
    ══════════════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://hrxfctzncixxqmpfhskv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BqpAgZH6ty-9wft10_YMhw_0rcIPuWT'; // clave PÚBLICA de solo lectura
-const BUCKET_FOTOS = 'planify_matriceria';
 
 const qs         = new URLSearchParams(location.search);
 const num        = (k, def) => { const v = parseInt(qs.get(k), 10); return Number.isFinite(v) && v > 0 ? v : def; };
 const REFRESCO   = Math.max(5, num('refresco', 30)) * 1000;
 const COLUMNAS   = num('columnas', 0);   // 0 = las calcula sola segun cuantas matrices hay
-const CON_FOTOS  = qs.get('fotos') !== '0';
 const VER_RES    = qs.get('res')   === '1';   // apagado por defecto: en la TV es ruido
 
+// Los cinco estados y como se llaman en la TV. Si se agrega uno hay que tocar tambien el
+// check de planify.matrices_ingresos, la RPC planify_matriz_estado y la lista MAT_ESTADOS
+// de Planify: si no, no se puede cargar desde la app.
 const ESTADOS = {
-  ingresada:  { txt:'Ingresada',  c:'#58a6ff', cb:'#132c4d' },
-  en_proceso: { txt:'En proceso', c:'#e3b341', cb:'#3a2f10' },
+  ingresada:  { txt:'Ingresado',  c:'#58a6ff', cb:'#132c4d' },
+  en_proceso: { txt:'Proceso',    c:'#e3b341', cb:'#3a2f10' },
+  ver_damian: { txt:'Ver Damián', c:'#d2a8ff', cb:'#2f2150' },
   esperando:  { txt:'Esperando',  c:'#ff7b72', cb:'#3d1d1b' },
   terminada:  { txt:'Terminada',  c:'#3fb950', cb:'#12301a' }
 };
 
+// Abreviaturas de la descripcion, para ganar ancho sin perder sentido. Hoy solo "corte",
+// que es la palabra que mas se repite en el maestro de matrices; agregar otra es sumarle
+// un par a esta lista.
+const ABREVIATURAS = [[/\bcortes?\b/gi, 'C/']];
+function abreviar(t){
+  let r = String(t || '');
+  for (const [re, x] of ABREVIATURAS) r = r.replace(re, x);
+  return r.replace(/\s+/g, ' ').trim();
+}
+
 let datos = [];        // última respuesta buena
 let ultimaOk = null;   // cuándo trajo datos por última vez
-const fotos = new Map(); // foto_path -> objectURL | 'cargando' | 'error'
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fecha = d => { if (!d) return '—'; const [y,m,dd] = String(d).split('-'); return dd+'/'+m; };
-// Coma decimal y sin ceros de relleno: 3.50 -> "3,5"
-const hsTxt = v => (v == null || v === '' || !Number.isFinite(Number(v))) ? '' : String(Number(v)).replace('.', ',');
 
 async function traer(){
   // estado=neq.terminada: el monitor muestra lo que está EN el taller. Cuando la matriz se
@@ -199,27 +189,6 @@ async function traer(){
   const r = await fetch(url, { headers:{ apikey:SUPABASE_KEY, 'Accept-Profile':'planify' }, cache:'no-store' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
-}
-
-// La foto vive en un bucket PRIVADO: no se puede poner la URL directa en el <img>, hay que
-// pedirla con la clave. Se baja UNA vez por archivo y queda cacheada; si la cambian, el
-// path cambia (lleva la fecha en el nombre) y se baja la nueva. Si falla, no se muestra
-// foto y la tarjeta sigue andando: en una TV nunca se rompe la pantalla por una imagen.
-async function traerFotos(){
-  if (!CON_FOTOS) return;
-  for (const m of datos){
-    const p = m.foto_path;
-    if (!p || fotos.has(p)) continue;
-    fotos.set(p, 'cargando');
-    try{
-      const url = SUPABASE_URL + '/storage/v1/object/' + BUCKET_FOTOS + '/'
-                + String(p).split('/').map(encodeURIComponent).join('/');
-      const r = await fetch(url, { headers:{ apikey:SUPABASE_KEY, Authorization:'Bearer ' + SUPABASE_KEY } });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      fotos.set(p, URL.createObjectURL(await r.blob()));
-      pintar();
-    }catch(e){ fotos.set(p, 'error'); }
-  }
 }
 
 async function actualizar(){
@@ -232,204 +201,93 @@ async function actualizar(){
     $('estadoConn').textContent = 'En línea · ' + ultimaOk.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
     $('estadoConn').className = '';
     pintar();
-    traerFotos();
   }catch(e){
     $('estadoConn').textContent = 'SIN CONEXIÓN' + (ultimaOk ? ' · último dato ' + ultimaOk.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '');
     $('estadoConn').className = 'mal';
   }
 }
 
-// El "hoy" sale del SERVIDOR, no del reloj de la TV: la vista calcula dias_demora en hora
-// Argentina, así que para una matriz que sigue en el taller (sin fecha_salida)
-// fecha_ingreso + dias_demora ES la fecha de hoy del servidor. Con eso se decide si la
-// salida estimada está vencida, sin que una PC con la fecha mal puesta pueda mentir.
-function hoyServidor(){
-  for (const m of datos){
-    if (m.fecha_ingreso && !m.fecha_salida && Number.isFinite(Number(m.dias_demora))){
-      const d = new Date(String(m.fecha_ingreso) + 'T00:00:00');
-      if (!isNaN(d)){ d.setDate(d.getDate() + Number(m.dias_demora)); return d; }
-    }
-  }
-  const n = new Date();
-  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+// Descripcion de la matriz. El NUMERO ya no se muestra: si lo cargaron, se muestra la
+// descripcion del maestro; si escribieron texto libre, eso ES la descripcion. El numero se
+// sigue usando en Planify para que la misma matriz no termine cargada con una descripcion
+// distinta cada vez.
+function descripcion(m){
+  return abreviar(String(m.nombre_matriz || '').trim() || String(m.numero_matriz || '').trim());
 }
 
-function bloque(lbl, txt, lineas, clase){
-  if (!txt) return '';
-  return `<div class="bloque ${clase||''}"><span class="lbl">${lbl}</span>`
-       + `<div class="txt" style="-webkit-line-clamp:${lineas}">${esc(txt)}</div></div>`;
-}
-
-// Lo que se escribe en "Numero de matriz" no siempre es un numero: una matriz experimental,
-// una muestra o una recien hecha todavia no lo tiene, y ahi cargan el NOMBRE. Se toma como
-// numero solo si son digitos (con una letra al final: 12A). Cualquier otra cosa es el nombre.
-function esNumeroDeMatriz(v){ return /^\d+\s*[a-zA-Z]?$/.test(String(v || '').trim()); }
-
-function tarjeta(m, hoy){
+function fila(m){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
   const clase = d >= 7 ? 'alerta' : (d >= 3 ? 'aviso' : '');
+  return `<div class="fila ${clase}" style="--c:${e.c};--cb:${e.cb}">`
+       + `<div class="c-fecha"><span>${fecha(m.fecha_ingreso)}</span></div>`
+       + `<div class="c-desc"><span>${esc(descripcion(m))}</span></div>`
+       + `<div class="c-estado"><span><i>${e.txt}</i></span></div>`
+       + `</div>`;
+}
 
-  const problema = String(m.motivo || '').trim();
-  const tarea    = String(m.tarea  || '').trim();
-  const hecho    = String(m.tarea_realizada || '').trim();
-  const obs      = String(m.observaciones   || '').trim();
-  // Las observaciones del alta van pegadas al problema: es más contexto de lo mismo y
-  // así no se come una línea entera de la tarjeta.
-  const problemaTxt = obs ? (problema ? problema + ' · ' + obs : obs) : problema;
-  // Cuando no hay tarea cargada, el problema se puede estirar; cuando sí, cada uno 2 líneas.
-  const lineasProb = tarea ? 2 : 3;
-
-  const foto = fotos.get(m.foto_path);
-  const imgHtml = (CON_FOTOS && foto && foto !== 'cargando' && foto !== 'error')
-    ? `<img class="foto" src="${esc(foto)}" alt="">` : '';
-
-  let salidaHtml = '';
-  if (m.salida_estimada){
-    const s = new Date(String(m.salida_estimada) + 'T00:00:00');
-    const difDias = isNaN(s) ? null : Math.round((s - hoy) / 86400000);
-    const cs = difDias == null ? '' : (difDias < 0 ? 'vencida' : (difDias === 0 ? 'hoy' : ''));
-    salidaHtml = `<div class="dato salida ${cs}"><span class="lbl">Salida est.</span><span class="val">${fecha(m.salida_estimada)}</span></div>`;
+// Ancho de columna SEGUN EL DATO, no segun el titulo: se mide lo que ocupan de verdad las
+// celdas y la columna queda del ancho del valor mas largo. El titulo, si no entra, se parte
+// en dos lineas (por eso .th span va con white-space normal), que es lo que pide el formato.
+function ajustarColumnas(cont){
+  const tabla = cont.querySelector('.tabla');
+  if (!tabla) return;
+  for (const col of ['fecha', 'desc', 'estado']){
+    let max = 0;
+    tabla.querySelectorAll('.fila .c-' + col + ' span').forEach(el => {
+      max = Math.max(max, el.getBoundingClientRect().width);
+    });
+    if (max) tabla.style.setProperty('--w-' + col, Math.ceil(max) + 'px');
   }
-  const hs = hsTxt(m.hs);
-  const hsHtml = hs ? `<div class="dato"><span class="lbl">HS</span><span class="val">${esc(hs)}</span></div>` : '';
-  const quien = String(m.quien || '').trim();
-
-  const cargado   = String(m.numero_matriz || '').trim();
-  const conNumero = esNumeroDeMatriz(cargado);
-  // Sin numero: lo cargado es el nombre. Si ademas vino nombre_matriz del maestro y es otro,
-  // se muestra ese y lo escrito queda de subtitulo, para no perder ninguno de los dos.
-  const nombreMatriz = conNumero
-    ? String(m.nombre_matriz || '').trim()
-    : (String(m.nombre_matriz || '').trim() || cargado);
-
-  return `<div class="card" style="--c:${e.c};--cb:${e.cb}">
-    <div class="fila1">
-      <div class="nro-caja">
-        <span class="lbl">Matriz</span>
-        <div class="nro${conNumero ? '' : ' sn'}">${conNumero ? esc(cargado) : 'S/N'}</div>
-      </div>
-      <div class="chips">
-        <div class="estado">${e.txt}</div>
-        ${quien ? `<div class="quien">👤 ${esc(quien)}</div>` : ''}
-      </div>
-    </div>
-    ${nombreMatriz ? `<div class="sub-nombre">${esc(nombreMatriz)}</div>` : ''}
-    <div class="cuerpo">
-      <div class="txts">
-        ${bloque('Problema', problemaTxt, lineasProb)}
-        ${bloque('Tarea a realizar', tarea, 2)}
-        ${bloque('Ya hecho', hecho, 1, 'hecho')}
-      </div>
-      ${imgHtml}
-    </div>
-    <div class="fila2">
-      <div class="dato"><span class="lbl">Ingresó</span><span class="val">${fecha(m.fecha_ingreso)}</span></div>
-      <div class="dato dias ${clase}"><span class="lbl">Demora</span><span class="val">${d} d</span></div>
-      ${salidaHtml}${hsHtml}
-    </div>
-  </div>`;
 }
 
-// Ningun renglon cortado a la mitad: si un bloque de texto no entra ENTERO en la tarjeta,
-// se saca. El orden del HTML es el de importancia (problema > tarea > ya hecho), asi que lo
-// que se cae es siempre lo menos importante. Vale para cualquier resolucion: en una TV mas
-// chica se muestra menos, pero nunca media linea.
-function podarBloques(){
-  document.querySelectorAll('.card .txts').forEach(txts => {
-    const limite = txts.getBoundingClientRect().bottom;
-    const hijos  = [...txts.children];
-    // De ABAJO hacia arriba y cortando en el primero que entra: asi se cae siempre lo
-    // menos importante. (Recorriendolo al reves se podia borrar la tarea y dejar el
-    // "ya hecho", que es peor.) El indice 0 -el problema- no se saca nunca: una tarjeta
-    // sin problema no le dice nada a nadie.
-    for (let i = hijos.length - 1; i >= 1; i--){
-      if (hijos[i].getBoundingClientRect().bottom > limite - 1) hijos[i].remove();
-      else break;
-    }
-    // El problema no se saca nunca, pero si el solo no entra (tarjeta chica o texto largo)
-    // se le van recortando renglones hasta que entre. Mejor el problema cortado con puntos
-    // suspensivos que medio renglon tapado por el borde.
-    const primero = txts.firstElementChild;
-    const txt = primero && primero.querySelector('.txt');
-    if (txt){
-      let lineas = parseInt(txt.style.webkitLineClamp, 10) || 3;
-      while (lineas > 1 && primero.getBoundingClientRect().bottom > limite - 1){
-        lineas--;
-        txt.style.webkitLineClamp = String(lineas);
-      }
-    }
-  });
-}
-
-// Una tarjeta llena mide 13 em de alto (numero + nombre + un bloque de texto + el pie) y
-// necesita 22 em de ancho para que el texto no se parta en migajas. De ahi salen las dos
-// divisiones de abajo: con el alto y el ancho de una celda, cual es la letra mas grande
-// que entra.
-const EM_ALTO = 13, EM_ANCHO = 22;
-const letraQueEntra = (cw, ch) => Math.min(ch / EM_ALTO, cw / EM_ANCHO);
-
-// Elige filas x columnas para que TODAS las matrices entren en una sola pantalla con la
-// letra MAS GRANDE posible. No hay carrusel: si hay mas matrices, las tarjetas se achican.
-function mejorGrilla(n, ancho, alto, gx, gy){
-  let mejor = { cols:1, filas:n, letra:0 };
-  for (let cols = 1; cols <= n; cols++){
-    const filas = Math.ceil(n / cols);
-    const cw = (ancho - gx * (cols  - 1)) / cols;
-    const ch = (alto  - gy * (filas - 1)) / filas;
-    if (cw <= 0 || ch <= 0) continue;
-    const letra = letraQueEntra(cw, ch);
-    if (letra > mejor.letra) mejor = { cols, filas, letra };
-  }
-  return mejor;
-}
+const EM_FILA  = 1.95;   // alto de un renglon con su relleno y su separacion, en em
+const EM_TH    = 2.6;    // el encabezado, con el titulo a 1,14em y lugar para dos lineas
+const EM_ANCHO = 24;     // fecha + estado + separaciones + lo minimo que necesita la descripcion
+const FS_MAX   = 40;     // con una o dos matrices, que no quede un renglon gigante
 
 function pintar(){
-  const grilla = $('grilla');
-  const n   = datos.length;
-  const hoy = hoyServidor();
+  const cont = $('grilla');
+  const n = datos.length;
 
   $('resumen').textContent = n
     ? n + (n === 1 ? ' matriz en el taller' : ' matrices en el taller')
     : 'sin matrices en el taller';
 
   if (!n){
-    grilla.style.removeProperty('--cw');
-    grilla.style.removeProperty('--ch');
-    grilla.innerHTML = '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
+    cont.innerHTML = '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
     return;
   }
 
-  // Tamaño real disponible para las tarjetas (ya descontados header, pie y padding).
-  const cs = getComputedStyle(grilla);
-  const gy = parseFloat(cs.rowGap)    || 0;
-  const gx = parseFloat(cs.columnGap) || 0;
-  const ancho = grilla.clientWidth  - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight)  || 0);
-  const alto  = grilla.clientHeight - (parseFloat(cs.paddingTop)  || 0) - (parseFloat(cs.paddingBottom) || 0);
+  const cs    = getComputedStyle(cont);
+  const ancho = cont.clientWidth  - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight)  || 0);
+  const alto  = cont.clientHeight - (parseFloat(cs.paddingTop)  || 0) - (parseFloat(cs.paddingBottom) || 0);
 
-  const g     = COLUMNAS ? { cols: COLUMNAS, filas: Math.ceil(n / COLUMNAS) }
-                         : mejorGrilla(n, ancho, alto, gx, gy);
-  const cw    = (ancho - gx * (g.cols  - 1)) / g.cols;
-  const ch    = (alto  - gy * (g.filas - 1)) / g.filas;
+  // Tabla solo con 3 filas o mas; con menos va como lista, sin encabezado.
+  const conTitulos = n >= 3;
+  const fs = Math.max(9, Math.min(FS_MAX,
+                                  alto / (n * EM_FILA + (conTitulos ? EM_TH : 0)),
+                                  ancho / EM_ANCHO));
 
-  // La letra sale del tamaño de la celda, no de la pantalla: una tarjeta chica trae letra
-  // chica, y todo lo de adentro (que esta en em) la acompaña. El piso de 9px es para que
-  // con muchisimas matrices siga siendo texto y no una mancha; lo que no entre lo saca
-  // podarBloques().
-  // Piso de 9 px: con muchisimas matrices tiene que seguir siendo texto y no una mancha.
-  // Lo que no entre a esa letra lo recorta podarBloques().
-  const fs = Math.max(9, letraQueEntra(cw, ch));
-  grilla.style.setProperty('--fs', fs.toFixed(2) + 'px');
-  // Se redondea para abajo: un pixel de mas y el navegador manda una tarjeta a otra fila.
-  grilla.style.setProperty('--cw', Math.floor(cw) + 'px');
-  grilla.style.setProperty('--ch', Math.floor(ch) + 'px');
+  cont.innerHTML = `<div class="tabla" style="--fs:${fs.toFixed(2)}px">`
+    + (conTitulos
+        ? '<div class="th"><span class="c-fecha">Ingreso</span>'
+        + '<span class="c-desc">Descripción</span><span class="c-estado">Estado</span></div>'
+        : '')
+    + datos.map(fila).join('')
+    + '</div>';
 
-  grilla.innerHTML = datos.map(m => tarjeta(m, hoy)).join('');
-
-  podarBloques();
-  // Segunda pasada tras el reflow: en pantallas chicas el redondeo deja algun bloque
-  // asomando por un pixel despues de la primera medicion.
-  requestAnimationFrame(podarBloques);
+  // Segunda pasada por el ANCHO: con las columnas ya medidas, si la descripcion mas larga
+  // no entra a lo ancho se achica la letra hasta que entre (en vez de cortar el texto).
+  ajustarColumnas(cont);
+  const tabla = cont.querySelector('.tabla');
+  const natural = tabla.getBoundingClientRect().width;
+  if (natural > ancho){
+    const fs2 = Math.max(9, fs * (ancho / natural));
+    tabla.style.setProperty('--fs', fs2.toFixed(2) + 'px');
+    ['fecha','desc','estado'].forEach(c => tabla.style.removeProperty('--w-' + c));
+    ajustarColumnas(cont);
+  }
 }
 
 function pintarRes(){

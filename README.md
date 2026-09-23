@@ -1,12 +1,17 @@
 # Monitor Matricería
 
-TV del taller: **un solo tablero fijo** con las matrices que están en matricería. Cada
-tarjeta muestra **lo mismo que se carga en Planify → 🛠️ Matricería**: número, nombre,
-estado, **problema**, **tarea a realizar**, **lo ya hecho**, **quién** la está haciendo,
-**HS**, **salida estimada**, día de ingreso, días de demora y la **foto** si la subieron.
-El número de matriz va en grande con la etiqueta **MATRIZ** arriba, para que un "2" solo no
-se lea como una cantidad. **Entran todas las matrices en una sola pantalla**: no hay carrusel ni páginas — cuantas
-más haya, más chicas se dibujan las tarjetas, y la letra se achica con ellas.
+TV del taller: **un renglón por matriz**, con **Ingreso · Descripción · Estado**, en el
+**formato de cuadro sinóptico** de la casa — columnas del ancho del dato, título más grande
+que el contenido, centrado y ordenado por demora de mayor a menor. El color y el relleno
+siguen la estética de la página (fondo del renglón, barra del estado y chip), que es la
+excepción que pidió el dueño a ese formato.
+Entran todas las matrices en una sola pantalla: no hay carrusel — cuantas más haya, más
+chicos los renglones.
+
+**El número de matriz no se muestra.** Si lo cargaron, se ve la descripción del maestro; si
+escribieron texto libre (matriz experimental, muestra, recién hecha), ese texto es la
+descripción. El número se sigue usando en Planify para que la misma matriz no termine con una
+descripción distinta cada vez. En la descripción, la palabra **Corte** se abrevia **C/**.
 
 > El contador de **unidades sin accidente** por matriz **no va acá** (Thomas, 16/09/2026:
 > *"en matricería solamente un monitor fijo de las matrices que hay en el taller"*). Ese
@@ -43,32 +48,23 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 
 ### Ajustes por URL
 
-`index.html?columnas=2&refresco=30`
+`index.html?refresco=30`
 
 | Parámetro | Default | Qué hace |
 |---|---|---|
-| `columnas` | auto | Fuerza las columnas (por defecto las calcula sola) |
 | `refresco` | 30 | Segundos entre consultas |
-| `fotos` | 1 | `fotos=0` apaga las fotos (TV con poco ancho de banda) |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado: en la TV es ruido) |
 | `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
 
-## Colores
+## Estados
 
-| Estado | Color | Significa |
-|---|---|---|
-| Ingresada | azul | Entró, todavía no se tocó |
-| En proceso | amarillo | Se está trabajando |
-| Esperando | rojo | Frenada esperando repuesto o material |
-| Terminada | — | Sale de la TV (y se cierra la tarea en Planify) |
+`Ingresado` · `Proceso` · `Ver Damián` (frenada hasta que la mire Damián) · `Esperando`
+(repuesto o material) · `Terminada` (sale de la TV). Se cambian desde Planify, no desde acá.
+Cada uno con su color, como el resto de la página: azul, ámbar, violeta, rojo y verde.
 
-La **demora** se pinta amarilla a los 3 días y roja a los 7. La **salida estimada** se pinta
-amarilla el día que vence y roja si ya pasó. Las dos cuentas usan el **día del servidor**
-(la vista calcula la demora en hora Argentina y la TV deduce de ahí qué día es hoy): una PC
-con la fecha mal puesta no puede mentir.
-
-Si la matriz no tiene cargada la tarea, las HS, el quién o la salida estimada, esos renglones
-**no se muestran** en vez de mostrarse vacíos: la tarjeta sólo dice lo que hay.
+El orden lo decide la **demora**, que calcula el servidor en hora Argentina: la matriz que
+lleva más días arriba de todo. Además la fecha se pinta **ámbar a los 3 días y roja a los 7**.
+Una PC con la fecha mal puesta no puede mentir con eso.
 
 ## La TV del taller entra por un aparato tipo Roku
 
@@ -100,12 +96,6 @@ a mano y no insiste más.
 
 ⚠ Al tocar `index.html` hay que **subir el `<meta name="monitor-version">`**. Si no, el
 aviso no salta.
-
-## Matriz sin número
-
-Cuando la matriz no tiene número (experimental, muestra, recién hecha) se escribe el
-**nombre** en el campo "Número de matriz" de Planify. La TV lo entiende: el lugar del número
-dice **S/N** y lo escrito aparece como nombre de la matriz, igual que el resto.
 
 ## Si la TV muestra "SIN CONEXIÓN"
 
