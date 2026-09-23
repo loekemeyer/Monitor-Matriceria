@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.17">
+<meta name="monitor-version" content="2026-09-23.19">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -98,8 +98,10 @@
      "problema y espera separados, 1ro problema"). Con columna propia cada una mide lo suyo:
      la de Problema deja de ensancharse por la espera mas larga. A cambio queda vacia en los
      renglones que no esperan nada; por eso pintar() NO dibuja la columna cuando no espera
-     ninguna, que es el caso normal. */
-  .c-espera{flex:0 0 var(--w-espera,auto);color:var(--c,#58a6ff)}
+     ninguna, que es el caso normal.
+     En BLANCO, no en el color del estado (Elias, 23/09/2026: "y la letra en blanco no rojo" + "la podes poner bold"):
+     el rojo ya lo pone el chip de al lado y repetirlo en el texto no agregaba nada. */
+  .c-espera{flex:0 0 var(--w-espera,auto);color:#e6edf3;font-weight:700}
   /* Los topes en em evitan que UN texto largo ensanche la tabla y le achique la letra a los
      once renglones. Lo que NO entra en el tope no se corta: se PARTE en dos renglones
      (Elias, 23/09/2026: "misma linea, que sea 2 lineas en caso de sobrepasar el limite de

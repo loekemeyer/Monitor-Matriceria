@@ -91,8 +91,10 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   problema"*). Cada una en su columna: así la de Problema mide sólo los problemas y no se
   ensancha por la espera más larga. Eso resuelve de paso el chip descolocado — la celda de
   Estado queda con el chip y nada más, así que mide lo que mide un chip y los once quedan
-  alineados. El texto de la espera va en el color del estado, para que se lea de qué chip
-  viene.
+  alineados. El texto de la espera va en **blanco y en negrita** (Elías: *"la letra en blanco
+  no rojo"* y *"la podés poner bold"*): el rojo ya lo pone el chip de al lado, repetirlo en el
+  texto no agregaba nada, y la negrita lo hace legible de lejos, que es lo que importa en una
+  TV a la que se le mira justamente eso.
   ⚠ **La columna Espera sólo se dibuja si alguna matriz espera algo** (`conEspera` en
   `pintar()`, que se le pasa a `fila()`). Sin eso quedaría una columna entera vacía, que es
   justo lo que el formato prohíbe; y ése es el caso normal, porque casi nunca hay una
