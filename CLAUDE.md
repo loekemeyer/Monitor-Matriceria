@@ -56,16 +56,25 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   como `src` directo: se bajan con la clave (`fetch` + `objectURL`) **una sola vez por
   archivo** y quedan cacheadas en memoria. Si una foto falla, la tarjeta se dibuja igual sin
   ella — en una TV jamás se rompe la pantalla por una imagen. Se apagan con `?fotos=0`.
-- **Lector de resolución** al lado del reloj (`pintarRes()`): arriba la ventana
-  (`innerWidth × innerHeight`, que es lo que miden `vh`/`vw`) y abajo la pantalla
-  (`screen.width × height`) + la escala si el DPR no es 1. Está para poder LEER de la TV
-  con qué medida se dibuja y ajustar el diseño a esa pantalla; si ventana ≠ pantalla es que
-  falta F11 o sobra zoom, y eso se arregla antes de tocar el CSS. Se apaga con `?res=0`.
+- ⚠ **La TV del taller NO es una PC**: entra por un aparato tipo **Roku**, con control
+  remoto, sin F11 y sin manera de sacar la barra del navegador. Informa **ventana 962 × 485**,
+  pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). De ahí sale el
+  **`@media (max-height: 600px)`** del CSS: con esa ventana el JS pasa solo a **4 tarjetas
+  (2×2)** — `VENT_BAJA` — y la hoja de estilo sube toda la tipografía (texto 2,3 → 2,7vh).
+  Se puede medir el 17% de aumento porque con 2 columnas cada tarjeta tiene el DOBLE de ancho
+  y el texto entra en menos renglones; con 6 tarjetas y esa letra, "tarea a realizar" no
+  entraba. `porPantalla` y `columnas` por URL siguen pisando el default.
+- **Lector de resolución** al lado del reloj (`pintarRes()`): **apagado por defecto**, se
+  prende con `?res=1`. Muestra ventana, pantalla y escala; sirve para medir una pantalla
+  nueva antes de tocar el CSS. En la TV va apagado porque es ruido.
 - **Nada cortado a la mitad** (`podarBloques()`): después de pintar, todo bloque de texto
-  que no entre ENTERO en la tarjeta se saca del DOM. El orden del HTML es el de importancia
-  (problema > tarea a realizar > ya hecho), así que en una pantalla chica se pierde lo menos
-  importante, nunca media línea. Por eso el diseño aguanta cualquier resolución sin retocar
-  los `vh`.
+  que no entre ENTERO en la tarjeta se saca del DOM. Recorre los bloques **de abajo hacia
+  arriba y corta en el primero que entra**, así se cae siempre lo menos importante (el orden
+  del HTML es problema > tarea a realizar > ya hecho); al revés se podía borrar la tarea y
+  dejar el "ya hecho". El bloque del problema NO se saca nunca. Corre dos veces (la segunda
+  en un `requestAnimationFrame`) porque en pantallas chicas el redondeo deja algún bloque
+  asomando un píxel después de la primera medición. Por eso el diseño aguanta cualquier
+  resolución sin retocar los `vh`.
 - Si se cae la red, **deja lo último que se vio en pantalla** y avisa `SIN CONEXIÓN` abajo
   a la izquierda. Una TV en blanco no le sirve a nadie.
 
@@ -78,7 +87,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `refresco` | 30 | Segundos entre consultas a Supabase |
 | `pagina` | 15 | Segundos que dura cada pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos |
-| `res` | 1 | `res=0` esconde el lector de resolución |
+| `res` | 0 | `res=1` muestra el lector de resolución (apagado por defecto) |
 
 Ejemplo para una TV vertical: `index.html?columnas=2&porPantalla=6`.
 

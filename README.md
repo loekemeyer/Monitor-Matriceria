@@ -51,7 +51,7 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 | `refresco` | 30 | Segundos entre consultas |
 | `pagina` | 15 | Segundos por pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos (TV con poco ancho de banda) |
-| `res` | 1 | `res=0` esconde el lector de resolución del header |
+| `res` | 0 | `res=1` muestra el lector de resolución (apagado: en la TV es ruido) |
 
 ## Colores
 
@@ -70,12 +70,25 @@ con la fecha mal puesta no puede mentir.
 Si la matriz no tiene cargada la tarea, las HS, el quién o la salida estimada, esos renglones
 **no se muestran** en vez de mostrarse vacíos: la tarjeta sólo dice lo que hay.
 
-## Qué resolución está usando la TV
+## La TV del taller entra por un aparato tipo Roku
 
-Arriba, al lado del reloj, el monitor dice con qué medida se está dibujando: en grande la
-**ventana** (lo que miden las tarjetas: `vh`/`vw`) y abajo la **pantalla** del monitor. Si
-las dos no coinciden, falta **F11** o sobra zoom — eso se arregla antes de tocar el diseño.
-Cuando ya no haga falta verlo, se apaga con `?res=0`.
+No es una PC con navegador: es un **dispositivo de TV** (Roku / Fire TV / smart TV) que se
+maneja con **control remoto**. No tiene F11 ni forma de sacar la barra del navegador. Lo que
+informa, medido el 23/09/2026:
+
+| | |
+|---|---|
+| Ventana (lo que miden los `vh`/`vw`) | **962 × 485** |
+| Pantalla que informa el aparato | 962 × 541 |
+| Escala (`devicePixelRatio`) | 1,33 → panel real **1280 × 720** |
+
+Por eso el CSS tiene un **`@media (max-height: 600px)`**: con esa ventana, la TV pasa sola a
+**4 tarjetas (2×2)** en vez de 6 y toda la tipografía sube, para que se lea desde el fondo
+del taller. Como cada tarjeta queda con el doble de ancho, el texto entra en menos renglones
+y no se pierde nada por agrandarlo.
+
+Si alguna vez hay que averiguar con qué medida dibuja una pantalla nueva, se abre con
+**`?res=1`** y el header muestra los tres números de la tabla de arriba.
 
 ## Si la TV muestra "SIN CONEXIÓN"
 

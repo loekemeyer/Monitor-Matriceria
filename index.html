@@ -24,8 +24,8 @@
   .titulo .sub{font-size:2.2vh;color:#8b949e}
   .reloj{font-size:4.2vh;font-weight:700;font-variant-numeric:tabular-nums}
   .reloj .fecha{display:block;font-size:1.8vh;font-weight:400;color:#8b949e;text-align:right}
-  /* Lector de resolucion: esta para poder LEER de la TV con que medida se esta dibujando
-     y ajustar el diseño a esa pantalla. Se apaga con ?res=0 cuando ya no haga falta. */
+  /* Lector de resolucion: APAGADO por defecto (en la TV es ruido). Se prende con ?res=1
+     cuando hay que averiguar con que medida dibuja una pantalla nueva. */
   .res{
     font-size:1.7vh;font-variant-numeric:tabular-nums;color:#8b949e;text-align:right;
     background:#161b22;border:.25vh solid #30363d;border-radius:.8vh;padding:.6vh 1vw;
@@ -92,6 +92,36 @@
   .puntos i{width:1.3vh;height:1.3vh;border-radius:50%;background:#30363d;display:block}
   .puntos i.on{background:#58a6ff}
   #estadoConn.mal{color:#ff7b72;font-weight:700}
+
+  /* ── TV POR DISPOSITIVO (Roku / Fire TV / smart TV) ───────────────────────
+     Esos aparatos no abren un navegador de PC: informan una ventana chica
+     (la TV del taller: 962 x 485) y despues escalan la imagen al panel. No hay
+     F11 ni manera de sacarles la barra: se maneja con el control remoto. Como
+     todo el diseño esta en vh, la proporcion no cambia — lo que cambia es que
+     el alto disponible es la mitad y el ancho queda relativamente MAS grande
+     (962/485 = 1,98 contra 1,78 de un 1920x1080).
+     Entonces acá la TV pasa a 4 tarjetas (2x2, lo decide el JS) y con el doble
+     de ancho por tarjeta el texto entra en menos renglones: eso es lo que deja
+     subir toda la tipografia ~30% sin que nada se desborde. Se lee desde el
+     fondo del taller, que es de lo que se trata. */
+  @media (max-height: 600px){
+    .titulo h1{font-size:5.2vh}
+    .titulo .sub{font-size:2.6vh}
+    .reloj{font-size:5vh}
+    .reloj .fecha{font-size:2.2vh}
+    .res{font-size:2vh}
+    .res b{font-size:2.5vh}
+    .nro{font-size:7vh}
+    .estado,.quien{font-size:2.4vh}
+    .sub-nombre{font-size:3vh}
+    .bloque .lbl,.dato .lbl{font-size:1.7vh}
+    .bloque .txt{font-size:2.7vh}
+    .dato .val{font-size:3.4vh}
+    .dias .val{font-size:5vh}
+    .foto{max-height:16vh}
+    footer{font-size:2.3vh}
+    .vacio{font-size:5vh}
+  }
 </style>
 </head>
 <body>
@@ -129,7 +159,11 @@
      ?pagina=15       cada cuántos segundos rota si hay más de las que entran
      ?columnas=3      columnas de la grilla
      ?fotos=0         apaga las fotos (si la TV tiene poco ancho de banda)
-     ?res=0           esconde el lector de resolucion del header
+   En una ventana baja (<=600px de alto: Roku/Fire TV/smart TV, que informan algo
+   como 962x485) el default pasa solo a 4 tarjetas en 2 columnas y la hoja de
+   estilo agranda toda la tipografia, para que se lea desde el fondo del taller.
+   Igual se puede pisar con porPantalla y columnas.
+     ?res=1           muestra el lector de resolucion (apagado por defecto)
    ══════════════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://hrxfctzncixxqmpfhskv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BqpAgZH6ty-9wft10_YMhw_0rcIPuWT'; // clave PÚBLICA de solo lectura
@@ -137,12 +171,14 @@ const BUCKET_FOTOS = 'planify_matriceria';
 
 const qs         = new URLSearchParams(location.search);
 const num        = (k, def) => { const v = parseInt(qs.get(k), 10); return Number.isFinite(v) && v > 0 ? v : def; };
-const POR_PANT   = num('porPantalla', 6);
+// Ventana baja = TV por dispositivo (ver el @media del CSS). Menos tarjetas y mas grandes.
+const VENT_BAJA  = window.innerHeight <= 600;
+const POR_PANT   = num('porPantalla', VENT_BAJA ? 4 : 6);
 const REFRESCO   = Math.max(5, num('refresco', 30)) * 1000;
 const PAGINA     = Math.max(5, num('pagina', 15)) * 1000;
-const COLUMNAS   = num('columnas', 3);
+const COLUMNAS   = num('columnas', VENT_BAJA ? 2 : 3);
 const CON_FOTOS  = qs.get('fotos') !== '0';
-const VER_RES    = qs.get('res')   !== '0';
+const VER_RES    = qs.get('res')   === '1';   // apagado por defecto: en la TV es ruido
 
 const ESTADOS = {
   ingresada:  { txt:'Ingresada',  c:'#58a6ff', cb:'#132c4d' },
@@ -294,9 +330,15 @@ function tarjeta(m, hoy){
 function podarBloques(){
   document.querySelectorAll('.card .txts').forEach(txts => {
     const limite = txts.getBoundingClientRect().bottom;
-    [...txts.children].forEach(b => {
-      if (b.getBoundingClientRect().bottom > limite + 1) b.remove();
-    });
+    const hijos  = [...txts.children];
+    // De ABAJO hacia arriba y cortando en el primero que entra: asi se cae siempre lo
+    // menos importante. (Recorriendolo al reves se podia borrar la tarea y dejar el
+    // "ya hecho", que es peor.) El indice 0 -el problema- no se saca nunca: una tarjeta
+    // sin problema no le dice nada a nadie.
+    for (let i = hijos.length - 1; i >= 1; i--){
+      if (hijos[i].getBoundingClientRect().bottom > limite - 1) hijos[i].remove();
+      else break;
+    }
   });
 }
 
@@ -320,6 +362,9 @@ function pintar(){
     : '<div class="vacio"><span class="emoji">✅</span><span>No hay ninguna matriz en el taller</span></div>';
 
   podarBloques();
+  // Segunda pasada tras el reflow: en pantallas chicas el redondeo deja algun bloque
+  // asomando por un pixel despues de la primera medicion.
+  requestAnimationFrame(podarBloques);
 
   $('puntos').innerHTML = paginas > 1
     ? Array.from({length:paginas}, (_,i) => `<i class="${i===pagina?'on':''}"></i>`).join('')
