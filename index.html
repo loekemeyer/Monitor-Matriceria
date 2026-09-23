@@ -41,7 +41,12 @@
   }
   .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.9vh;background:var(--c,#58a6ff)}
   .card .fila1{display:flex;align-items:flex-start;justify-content:space-between;gap:1vw}
-  .nro{font-size:6.4vh;font-weight:800;line-height:1;letter-spacing:-.01em;
+  /* El numero solo no se entiende: un "2" grande puede leerse como una cantidad.
+     La etiqueta MATRIZ arriba lo aclara y casi no ocupa lugar (line-height 1). */
+  .nro-caja{min-width:0}
+  .nro-caja .lbl{font-size:1.5vh;color:#8b949e;text-transform:uppercase;letter-spacing:.08em;
+                 display:block;line-height:1;margin-bottom:.3vh}
+  .nro{font-size:6vh;font-weight:800;line-height:1;letter-spacing:-.01em;
        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chips{display:flex;flex-direction:column;align-items:flex-end;gap:.6vh;flex:0 0 auto}
   .estado{
@@ -114,7 +119,7 @@
     .nro{font-size:7vh}
     .estado,.quien{font-size:2.4vh}
     .sub-nombre{font-size:3vh}
-    .bloque .lbl,.dato .lbl{font-size:1.7vh}
+    .bloque .lbl,.dato .lbl,.nro-caja .lbl{font-size:1.7vh}
     .bloque .txt{font-size:2.7vh}
     .dato .val{font-size:3.4vh}
     .dias .val{font-size:5vh}
@@ -300,7 +305,10 @@ function tarjeta(m, hoy){
 
   return `<div class="card" style="--c:${e.c};--cb:${e.cb}">
     <div class="fila1">
-      <div class="nro">${esc(m.numero_matriz)}</div>
+      <div class="nro-caja">
+        <span class="lbl">Matriz</span>
+        <div class="nro">${esc(m.numero_matriz)}</div>
+      </div>
       <div class="chips">
         <div class="estado">${e.txt}</div>
         ${quien ? `<div class="quien">👤 ${esc(quien)}</div>` : ''}

@@ -4,7 +4,8 @@ TV del taller: **un solo tablero fijo** con las matrices que están en matricer�
 tarjeta muestra **lo mismo que se carga en Planify → 🛠️ Matricería**: número, nombre,
 estado, **problema**, **tarea a realizar**, **lo ya hecho**, **quién** la está haciendo,
 **HS**, **salida estimada**, día de ingreso, días de demora y la **foto** si la subieron.
-Entran 6 por pantalla en una TV de 32" a 1920×1080; si hay más de 6, rota entre las
+El número de matriz va en grande con la etiqueta **MATRIZ** arriba, para que un "2" solo no
+se lea como una cantidad. Entran 6 por pantalla en una TV de 32" a 1920×1080; si hay más de 6, rota entre las
 pantallas del taller.
 
 > El contador de **unidades sin accidente** por matriz **no va acá** (Thomas, 16/09/2026:

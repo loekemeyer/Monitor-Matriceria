@@ -64,6 +64,10 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   Se puede medir el 17% de aumento porque con 2 columnas cada tarjeta tiene el DOBLE de ancho
   y el texto entra en menos renglones; con 6 tarjetas y esa letra, "tarea a realizar" no
   entraba. `porPantalla` y `columnas` por URL siguen pisando el default.
+- **El número grande lleva la etiqueta MATRIZ arriba.** Sin ella, un "2" solo se lee como
+  una cantidad, no como el número de la matriz (pasó de verdad: Elías preguntó "2 qué?" el
+  23/09/2026 mirando la TV). Cuesta casi nada (`line-height:1`) y se pagó bajando el número
+  de 6,4 a 6vh en pantallas grandes.
 - **Lector de resolución** al lado del reloj (`pintarRes()`): **apagado por defecto**, se
   prende con `?res=1`. Muestra ventana, pantalla y escala; sirve para medir una pantalla
   nueva antes de tocar el CSS. En la TV va apagado porque es ruido.
