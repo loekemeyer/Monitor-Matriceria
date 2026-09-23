@@ -134,9 +134,17 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   checks— pero entre publicar y que la TV se entere pasaba un rato largo. El costo de
   chequear es UN GET del propio `index.html` (~30 KB); a 2 minutos son 30 por hora, contra
   las 120 consultas a Supabase que la pantalla ya hace en ese mismo rato.
-  **La versión que corre se ve en el pie**, abajo a la derecha (`#ver`). Sin eso no había
-  forma de saber desde el taller qué copia tiene la TV, y "no saltó el aviso" no se podía
-  distinguir de "ya estaba al día".
+  **La versión que corre se ve en el pie**, abajo a la derecha (`#ver`), y al lado **qué pasó
+  en el último chequeo** (`diag()`): `sin chequear todavía` · `al día 17:43` ·
+  `hay 2026-09-23.99 17:43` · `HTTP 404 17:43` · `sin meta en lo publicado` ·
+  `fallo en fetch: <motivo>`. **Existe porque este aviso ya falló dos veces sin dejar rastro**:
+  el `catch` se comía el error y desde el taller no se podía distinguir *"el chequeo no corre"*
+  de *"corre y dice que está al día"* o de *"la red lo rechaza"*. Ahora la TV lo cuenta sola y
+  se lee de la misma pantalla — es el único camino, porque a esa TV no se le puede abrir la
+  consola.
+  ⚠ El fetch pide **`index.html?_v=…`** por su nombre explícito, no `location.pathname`: si la
+  TV quedó en una URL con parámetros o sin la barra final, `pathname` no siempre apunta al
+  html.
 - ⚠ **La TV del taller NO es una PC**: entra por un aparato tipo **Roku**, con control
   remoto, sin F11 y sin manera de sacar la barra del navegador. Informa **ventana 962 × 485**,
   pantalla 962 × 541 y escala 1,33 (panel real 1280 × 720). **Al probar un cambio hay que

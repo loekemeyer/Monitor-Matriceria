@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.21">
+<meta name="monitor-version" content="2026-09-23.22">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -382,8 +382,8 @@ function pintarRes(){
 // Si no coinciden, cartel rojo. Si falla la bajada (TV sin red), no se toca nada.
 const VERSION_LOCAL = (document.querySelector('meta[name="monitor-version"]') || {}).content || '';
 // La version, escrita en el pie: desde el taller se mira la TV y se sabe que copia tiene,
-// sin depender de que el cartel haya saltado o no.
-try{ $('ver').textContent = 'v' + (VERSION_LOCAL || '?'); }catch(e){}
+// sin depender de que el cartel haya saltado o no. diag() le agrega despues que paso en el
+// ultimo chequeo.
 const AUTORECARGA   = qs.get('autorecarga') !== '0';
 let   avisoVersion  = false;
 
@@ -394,15 +394,33 @@ function mostrarCartel(txt){
   el.className = 'on';
 }
 
+// Que paso en el ULTIMO chequeo, escrito en el pie. Existe porque este aviso ya fallo dos
+// veces sin dejar rastro: el catch se comia el error y desde el taller no habia forma de
+// distinguir "el chequeo no corre" de "corre y dice que esta al dia" o de "la red lo rechaza".
+// Ahora la TV lo cuenta sola y se lee de la misma pantalla.
+function diag(txt){
+  try{ $('ver').textContent = 'v' + (VERSION_LOCAL || '?') + (txt ? ' · ' + txt : ''); }catch(e){}
+}
+const hhmm = () => new Date().toTimeString().slice(0,5);
+
 async function chequearVersion(){
-  if (!VERSION_LOCAL) return;                       // sin meta no hay nada que comparar
+  if (!VERSION_LOCAL) { diag('sin meta de version'); return; }
+  let paso = 'arranca';
   try{
-    const r = await fetch(location.pathname + '?_v=' + Date.now(), { cache:'no-store' });
-    if (!r.ok) return;
-    const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+    // Se pide el archivo por su nombre EXPLICITO y no por location.pathname: si la TV quedo
+    // en una URL con parametros o sin la barra final, pathname no siempre apunta al html.
+    const url = 'index.html?_v=' + Date.now();
+    paso = 'fetch';
+    const r = await fetch(url, { cache:'no-store' });
+    if (!r.ok) { diag('HTTP ' + r.status + ' ' + hhmm()); return; }
+    paso = 'parse';
+    const txt = await r.text();
+    const doc = new DOMParser().parseFromString(txt, 'text/html');
     const meta = doc.querySelector('meta[name="monitor-version"]');
     const publicada = meta && meta.getAttribute('content');
-    if (!publicada || publicada === VERSION_LOCAL) return;   // al dia (o no se pudo leer)
+    if (!publicada) { diag('sin meta en lo publicado ' + hhmm()); return; }
+    if (publicada === VERSION_LOCAL) { diag('al dia ' + hhmm()); return; }
+    diag('hay ' + publicada + ' ' + hhmm());
     if (avisoVersion) return;
     avisoVersion = true;
 
@@ -421,7 +439,11 @@ async function chequearVersion(){
       u.searchParams.set('_v', publicada);           // pisa la cache del navegador de la TV
       location.replace(u.toString());
     }, 4000);
-  }catch(e){ /* sin red: se reintenta en el proximo chequeo */ }
+  }catch(e){
+    // Sin red se reintenta solo en el proximo chequeo, pero el motivo queda a la vista: un
+    // catch mudo es lo que hizo perder dos tardes con este mismo aviso.
+    diag('fallo en ' + paso + ': ' + ((e && e.message) || e) + ' ' + hhmm());
+  }
 }
 
 function reloj(){
@@ -438,6 +460,7 @@ pintarRes();          window.addEventListener('resize', pintarRes);
 // mecanismo andaba, pero entre que se publicaba y que la TV se enteraba pasaba un rato
 // largo. El costo de chequear es UN GET del propio index.html (~30 KB); a 2 minutos son 30
 // por hora, contra las 120 consultas a Supabase que la pantalla ya hace en ese mismo rato.
+diag('sin chequear todavia');
 setTimeout(chequearVersion, 15000);  setInterval(chequearVersion, 120000);
 reloj();              setInterval(reloj, 10000);
 actualizar();         setInterval(actualizar, REFRESCO);
