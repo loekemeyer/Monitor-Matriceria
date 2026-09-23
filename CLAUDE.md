@@ -64,6 +64,20 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   Se puede medir el 17% de aumento porque con 2 columnas cada tarjeta tiene el DOBLE de ancho
   y el texto entra en menos renglones; con 6 tarjetas y esa letra, "tarea a realizar" no
   entraba. `porPantalla` y `columnas` por URL siguen pisando el default.
+- ⚠ **`<meta name="monitor-version">` HAY QUE SUBIRLA EN CADA COMMIT que toque
+  `index.html`.** La página baja cada 10 minutos el `index.html` publicado en GitHub Pages
+  (sin caché), le lee esa meta y la compara con la de la copia que está corriendo. Si no
+  coinciden, saca un **cartel rojo arriba de todo** y —salvo `?autorecarga=0`— se recarga
+  sola a los 4 s con `?_v=<version>` para pisar la caché del navegador de la TV. Si ya se
+  recargó por esa versión y sigue vieja (caché que no suelta), NO insiste: deja el cartel
+  pidiendo recarga a mano. Sin subir la meta, el aviso no salta nunca y la TV puede quedar
+  semanas con una copia vieja — que es exactamente lo que pasó el 23/09/2026, dos veces en
+  la misma tarde.
+- **Matriz sin número** (experimental, muestra, recién hecha): en Planify escriben el
+  NOMBRE en el campo "Número de matriz". `esNumeroDeMatriz()` toma como número sólo dígitos
+  con una letra opcional al final (`344`, `12A`); cualquier otra cosa es un nombre, así que
+  el lugar del número dice **S/N** (más chico y gris, porque no identifica nada) y lo
+  escrito va al renglón del nombre, que es lo que sí identifica.
 - **El número grande lleva la etiqueta MATRIZ arriba.** Sin ella, un "2" solo se lee como
   una cantidad, no como el número de la matriz (pasó de verdad: Elías preguntó "2 qué?" el
   23/09/2026 mirando la TV). Cuesta casi nada (`line-height:1`) y se pagó bajando el número
@@ -92,6 +106,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `pagina` | 15 | Segundos que dura cada pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado por defecto) |
+| `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
 
 Ejemplo para una TV vertical: `index.html?columnas=2&porPantalla=6`.
 

@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
+     avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
+     toque este archivo: si no se sube, el aviso nunca salta. -->
+<meta name="monitor-version" content="2026-09-23.5">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -46,6 +50,10 @@
   .nro-caja{min-width:0}
   .nro-caja .lbl{font-size:1.5vh;color:#8b949e;text-transform:uppercase;letter-spacing:.08em;
                  display:block;line-height:1;margin-bottom:.3vh}
+  /* Matriz sin numero (experimental, muestra, nueva): en el campo "numero" escriben el
+     NOMBRE. Entonces el lugar del numero dice S/N -mas chico, porque no identifica nada-
+     y lo que escribieron va al renglon del nombre, que es lo que si identifica. */
+  .nro.sn{font-size:4.2vh;color:#8b949e}
   .nro{font-size:6vh;font-weight:800;line-height:1;letter-spacing:-.01em;
        white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chips{display:flex;flex-direction:column;align-items:flex-end;gap:.6vh;flex:0 0 auto}
@@ -98,6 +106,17 @@
   .puntos i.on{background:#58a6ff}
   #estadoConn.mal{color:#ff7b72;font-weight:700}
 
+  /* Cartel de version vieja: rojo brillante, letras blancas, arriba de todo. Empuja el
+     tablero hacia abajo en vez de taparlo (es un flex item mas), asi no esconde ninguna
+     matriz. Late despacio para que se note desde lejos sin marear. */
+  #cartelVer{
+    display:none;flex:0 0 auto;background:#e5001d;color:#fff;text-align:center;
+    font-size:3.2vh;font-weight:800;letter-spacing:.04em;padding:1.4vh 2vw;
+    text-transform:uppercase;animation:latir 2.4s ease-in-out infinite;
+  }
+  #cartelVer.on{display:block}
+  @keyframes latir{0%,100%{background:#e5001d}50%{background:#ff2a3d}}
+
   /* ── TV POR DISPOSITIVO (Roku / Fire TV / smart TV) ───────────────────────
      Esos aparatos no abren un navegador de PC: informan una ventana chica
      (la TV del taller: 962 x 485) y despues escalan la imagen al panel. No hay
@@ -117,6 +136,7 @@
     .res{font-size:2vh}
     .res b{font-size:2.5vh}
     .nro{font-size:7vh}
+    .nro.sn{font-size:4.6vh}
     .estado,.quien{font-size:2.4vh}
     .sub-nombre{font-size:3vh}
     .bloque .lbl,.dato .lbl,.nro-caja .lbl{font-size:1.7vh}
@@ -130,6 +150,7 @@
 </style>
 </head>
 <body>
+  <div id="cartelVer"></div>
   <header>
     <div class="titulo">
       <h1>🛠️ MATRICERÍA</h1>
@@ -169,6 +190,7 @@
    estilo agranda toda la tipografia, para que se lea desde el fondo del taller.
    Igual se puede pisar con porPantalla y columnas.
      ?res=1           muestra el lector de resolucion (apagado por defecto)
+     ?autorecarga=0   deja el cartel rojo pero NO recarga sola la pagina
    ══════════════════════════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://hrxfctzncixxqmpfhskv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BqpAgZH6ty-9wft10_YMhw_0rcIPuWT'; // clave PÚBLICA de solo lectura
@@ -273,6 +295,11 @@ function bloque(lbl, txt, lineas, clase){
        + `<div class="txt" style="-webkit-line-clamp:${lineas}">${esc(txt)}</div></div>`;
 }
 
+// Lo que se escribe en "Numero de matriz" no siempre es un numero: una matriz experimental,
+// una muestra o una recien hecha todavia no lo tiene, y ahi cargan el NOMBRE. Se toma como
+// numero solo si son digitos (con una letra al final: 12A). Cualquier otra cosa es el nombre.
+function esNumeroDeMatriz(v){ return /^\d+\s*[a-zA-Z]?$/.test(String(v || '').trim()); }
+
 function tarjeta(m, hoy){
   const e = ESTADOS[m.estado] || ESTADOS.ingresada;
   const d = Number(m.dias_demora || 0);
@@ -303,18 +330,26 @@ function tarjeta(m, hoy){
   const hsHtml = hs ? `<div class="dato"><span class="lbl">HS</span><span class="val">${esc(hs)}</span></div>` : '';
   const quien = String(m.quien || '').trim();
 
+  const cargado   = String(m.numero_matriz || '').trim();
+  const conNumero = esNumeroDeMatriz(cargado);
+  // Sin numero: lo cargado es el nombre. Si ademas vino nombre_matriz del maestro y es otro,
+  // se muestra ese y lo escrito queda de subtitulo, para no perder ninguno de los dos.
+  const nombreMatriz = conNumero
+    ? String(m.nombre_matriz || '').trim()
+    : (String(m.nombre_matriz || '').trim() || cargado);
+
   return `<div class="card" style="--c:${e.c};--cb:${e.cb}">
     <div class="fila1">
       <div class="nro-caja">
         <span class="lbl">Matriz</span>
-        <div class="nro">${esc(m.numero_matriz)}</div>
+        <div class="nro${conNumero ? '' : ' sn'}">${conNumero ? esc(cargado) : 'S/N'}</div>
       </div>
       <div class="chips">
         <div class="estado">${e.txt}</div>
         ${quien ? `<div class="quien">👤 ${esc(quien)}</div>` : ''}
       </div>
     </div>
-    ${m.nombre_matriz ? `<div class="sub-nombre">${esc(m.nombre_matriz)}</div>` : ''}
+    ${nombreMatriz ? `<div class="sub-nombre">${esc(nombreMatriz)}</div>` : ''}
     <div class="cuerpo">
       <div class="txts">
         ${bloque('Problema', problemaTxt, lineasProb)}
@@ -401,6 +436,53 @@ function pintarRes(){
     + (dpr !== 1 ? ` · escala ${dpr}×` : '');
 }
 
+// ── ¿La TV quedo con una copia vieja? ─────────────────────────────────────────────────
+// La pagina se publica sola en GitHub Pages al pushear a main, pero el navegador de la TV
+// se queda con el index.html que bajo la primera vez: los DATOS se refrescan cada 30 s, el
+// ARCHIVO no. Aca se baja el index.html publicado (sin cache), se le lee el
+// <meta name="monitor-version"> y se compara con el de la copia que esta corriendo.
+// Si no coinciden, cartel rojo. Si falla la bajada (TV sin red), no se toca nada.
+const VERSION_LOCAL = (document.querySelector('meta[name="monitor-version"]') || {}).content || '';
+const AUTORECARGA   = qs.get('autorecarga') !== '0';
+let   avisoVersion  = false;
+
+function mostrarCartel(txt){
+  const el = $('cartelVer');
+  if (!el) return;
+  el.textContent = txt;
+  el.className = 'on';
+}
+
+async function chequearVersion(){
+  if (!VERSION_LOCAL) return;                       // sin meta no hay nada que comparar
+  try{
+    const r = await fetch(location.pathname + '?_v=' + Date.now(), { cache:'no-store' });
+    if (!r.ok) return;
+    const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+    const meta = doc.querySelector('meta[name="monitor-version"]');
+    const publicada = meta && meta.getAttribute('content');
+    if (!publicada || publicada === VERSION_LOCAL) return;   // al dia (o no se pudo leer)
+    if (avisoVersion) return;
+    avisoVersion = true;
+
+    // Anti-bucle: si ya se recargo por ESTA version y seguimos con la vieja, es la cache de
+    // la TV y no hay nada que hacer desde acá — queda el cartel pidiendo recarga a mano.
+    let intentada = null;
+    try{ intentada = sessionStorage.getItem('mat_ver'); }catch(e){}
+    if (!AUTORECARGA || intentada === publicada){
+      mostrarCartel('⚠ Pantalla desactualizada · recargá la página con el control');
+      return;
+    }
+    try{ sessionStorage.setItem('mat_ver', publicada); }catch(e){}
+    mostrarCartel('⚠ Pantalla desactualizada · actualizando…');
+    setTimeout(() => {
+      const u = new URL(location.href);
+      u.searchParams.set('_v', publicada);           // pisa la cache del navegador de la TV
+      location.replace(u.toString());
+    }, 4000);
+  }catch(e){ /* sin red: se reintenta en el proximo chequeo */ }
+}
+
 function reloj(){
   const n = new Date();
   $('hora').textContent  = n.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
@@ -408,6 +490,9 @@ function reloj(){
 }
 
 pintarRes();          window.addEventListener('resize', pintarRes);
+// El primer chequeo al minuto (por si la TV arranco con una copia vieja de la cache) y
+// despues cada 10 minutos: es un archivo de 20 KB, no molesta a nadie.
+setTimeout(chequearVersion, 60000);  setInterval(chequearVersion, 600000);
 reloj();              setInterval(reloj, 10000);
 actualizar();         setInterval(actualizar, REFRESCO);
 // Rotación: sólo si hay MÁS matrices en el taller de las que entran en una pantalla.

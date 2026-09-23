@@ -53,6 +53,7 @@ En los dos casos conviene dejar el navegador en **pantalla completa (F11)**.
 | `pagina` | 15 | Segundos por pantalla cuando hay más de las que entran |
 | `fotos` | 1 | `fotos=0` apaga las fotos (TV con poco ancho de banda) |
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado: en la TV es ruido) |
+| `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
 
 ## Colores
 
@@ -90,6 +91,24 @@ y no se pierde nada por agrandarlo.
 
 Si alguna vez hay que averiguar con qué medida dibuja una pantalla nueva, se abre con
 **`?res=1`** y el header muestra los tres números de la tabla de arriba.
+
+## Si la TV quedó con una copia vieja
+
+La página se publica sola al pushear, pero el navegador de la TV se queda con el
+`index.html` que bajó la primera vez: **los datos se refrescan solos, el archivo no**. Por eso
+cada 10 minutos se compara la versión que está corriendo contra la publicada. Si son
+distintas sale un **cartel rojo arriba de todo** y la TV se recarga sola a los 4 segundos.
+Si después de recargar sigue vieja (caché que no suelta), el cartel queda pidiendo recarga
+a mano y no insiste más.
+
+⚠ Al tocar `index.html` hay que **subir el `<meta name="monitor-version">`**. Si no, el
+aviso no salta.
+
+## Matriz sin número
+
+Cuando la matriz no tiene número (experimental, muestra, recién hecha) se escribe el
+**nombre** en el campo "Número de matriz" de Planify. La TV lo entiende: el lugar del número
+dice **S/N** y lo escrito aparece como nombre de la matriz, igual que el resto.
 
 ## Si la TV muestra "SIN CONEXIÓN"
 
