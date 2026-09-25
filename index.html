@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-25.31">
+<meta name="monitor-version" content="2026-09-25.32">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -18,16 +18,31 @@
     background:#0d1117;color:#e6edf3;
     font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
   }
+  /* ⚠⚠ ACA NO SE USAN vh NI vw DIRECTO. El navegador de la TV (aparato tipo Roku) resuelve
+     100vh contra la PANTALLA (541 px) y no contra la VENTANA (485 px): no descuenta su propia
+     barra de direcciones. Con eso #rot quedaba 56 px mas ancho de lo que se ve y TODA la
+     franja derecha se cortaba. En la foto del 25/09/2026 (version .31, con el gap ya
+     arreglado) se veia "INGRESAD" sin la O, "ESPERAND" sin la D, "viernes, 25 de" sin
+     "septiembre" y el problema largo de la fila 2 cortado — todo en la misma linea vertical,
+     que es la firma de "el contenido es mas ancho que la pantalla", no de un chip apretado.
+     La cuenta cierra: el encabezado va space-between sobre 541, asi que el reloj termina en
+     522 y se pierden 37 px (= "septiembre"); la tabla, centrada en 541, se pasa 9 px (= una
+     letra del chip).
+     --vpw y --vph los escribe medirVentana() con innerWidth/innerHeight, que SI son la
+     ventana de verdad: es lo mismo que informa el lector de ?res=1 en la propia TV (962x485
+     de ventana contra 962x541 de pantalla). El 100vw/100vh de aca abajo es solo el respaldo
+     para el instante anterior a que corra el JS. */
+  :root{--vpw:100vw;--vph:100vh}
   /* Sin giro, #rot ocupa la pantalla y se comporta igual que el body de antes. */
   #rot{width:100%;height:100%;display:flex;flex-direction:column}
   /* Con giro, la caja se arma AL REVES -alto de pantalla como ancho y viceversa- y despues
      se rota. El translate es para traerla de vuelta al area visible: rotando 90 grados desde
      la esquina de arriba a la izquierda, la caja se va toda a la izquierda del borde. */
-  body.giro #rot{position:absolute;top:0;left:0;width:100vh;height:100vw;transform-origin:top left}
-  body.giro90  #rot{transform:translateX(100vw) rotate(90deg)}
-  body.giro270 #rot{transform:translateY(100vh) rotate(-90deg)}
+  body.giro #rot{position:absolute;top:0;left:0;width:calc(100 * var(--vph) / 100);height:calc(100 * var(--vpw) / 100);transform-origin:top left}
+  body.giro90  #rot{transform:translateX(calc(100 * var(--vpw) / 100)) rotate(90deg)}
+  body.giro270 #rot{transform:translateY(calc(100 * var(--vph) / 100)) rotate(-90deg)}
   /* ?vista=1: LUPA para mirar desde una PC como queda la TV ya enderezada. NO es un modo
-     de la TV. La clave es que NO toca la geometria: #rot sigue siendo 100vh x 100vw y los
+     de la TV. La clave es que NO toca la geometria: #rot sigue siendo calc(100 * var(--vph) / 100) x calc(100 * var(--vpw) / 100) y los
      vw/vh de todo el resto se siguen calculando contra la MISMA ventana, asi que el layout
      y el tamano de letra salen IDENTICOS a los de ?giro=90. Lo unico que cambia es el
      transform: en vez de rotar, achica para que la caja parada entre en la ventana acostada
@@ -38,7 +53,7 @@
     transform:translate(-50%,-50%) scale(var(--esc,1))}
   header{
     display:flex;align-items:center;justify-content:space-between;
-    padding:1.6vh 2vw;border-bottom:.35vh solid #21262d;flex:0 0 auto;
+    padding:calc(1.6 * var(--vph) / 100) calc(2 * var(--vpw) / 100);border-bottom:calc(.35 * var(--vph) / 100) solid #21262d;flex:0 0 auto;
   }
   /* ⚠ EL NAVEGADOR DE LA TV (aparato tipo Roku) IGNORA 'gap' EN FLEX. Lo descarta sin avisar,
      así que TODO lo que se separaba con gap queda pegado en la pantalla real: en el título
@@ -46,24 +61,24 @@
      Por eso en este archivo la separación NUNCA va con gap: va con margin/padding, que el
      aparato sí respeta. Si mañana se agrega una columna o un dato, separalo con margin. */
   .titulo{display:flex;align-items:baseline}
-  .titulo h1{font-size:4.2vh;letter-spacing:.06em;font-weight:800}
-  .titulo .sub{font-size:2.2vh;color:#8b949e;margin-left:1.4vw}
-  .reloj{font-size:4.2vh;font-weight:700;font-variant-numeric:tabular-nums;margin-left:1.2vw}
-  .reloj .fecha{display:block;font-size:1.8vh;font-weight:400;color:#8b949e;text-align:right}
+  .titulo h1{font-size:calc(4.2 * var(--vph) / 100);letter-spacing:.06em;font-weight:800}
+  .titulo .sub{font-size:calc(2.2 * var(--vph) / 100);color:#8b949e;margin-left:calc(1.4 * var(--vpw) / 100)}
+  .reloj{font-size:calc(4.2 * var(--vph) / 100);font-weight:700;font-variant-numeric:tabular-nums;margin-left:calc(1.2 * var(--vpw) / 100)}
+  .reloj .fecha{display:block;font-size:calc(1.8 * var(--vph) / 100);font-weight:400;color:#8b949e;text-align:right}
   /* Lector de resolucion: APAGADO por defecto (en la TV es ruido). Se prende con ?res=1
      cuando hay que averiguar con que medida dibuja una pantalla nueva. */
   .res{
-    font-size:1.7vh;font-variant-numeric:tabular-nums;color:#8b949e;text-align:right;
-    background:#161b22;border:.25vh solid #30363d;border-radius:.8vh;padding:.6vh 1vw;
+    font-size:calc(1.7 * var(--vph) / 100);font-variant-numeric:tabular-nums;color:#8b949e;text-align:right;
+    background:#161b22;border:calc(.25 * var(--vph) / 100) solid #30363d;border-radius:calc(.8 * var(--vph) / 100);padding:calc(.6 * var(--vph) / 100) calc(1 * var(--vpw) / 100);
   }
-  .res b{color:#e6edf3;font-size:2.1vh;display:block}
+  .res b{color:#e6edf3;font-size:calc(2.1 * var(--vph) / 100);display:block}
   .res.oculto{display:none}
 
   /* Flex en vez de grid: con la ultima fila incompleta (10 matrices en 4 columnas) las que
      quedan se CENTRAN en vez de dejar un hueco a la derecha. Las medidas de cada tarjeta
      las calcula el JS para que entren todas. */
   main{flex:1 1 auto;display:flex;align-items:center;justify-content:center;
-       padding:1.6vh 2vw;min-height:0;overflow:hidden}
+       padding:calc(1.6 * var(--vph) / 100) calc(2 * var(--vpw) / 100);min-height:0;overflow:hidden}
 
   /* UN RENGLON POR MATRIZ, CON EL FORMATO DE CUADRO SINOPTICO (pedido de Elias,
      23/09/2026: "se va a ver todo en una linea con fecha ingreso, descripcion y estado" +
@@ -180,13 +195,13 @@
 
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;color:#8b949e;font-size:4vh;text-align:center;
+    flex-direction:column;color:#8b949e;font-size:calc(4 * var(--vph) / 100);text-align:center;
   }
-  .vacio .emoji{font-size:9vh;margin-bottom:2vh}
+  .vacio .emoji{font-size:calc(9 * var(--vph) / 100);margin-bottom:calc(2 * var(--vph) / 100)}
 
   footer{
     flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
-    padding:1.1vh 2vw;border-top:.35vh solid #21262d;font-size:1.9vh;color:#8b949e;
+    padding:calc(1.1 * var(--vph) / 100) calc(2 * var(--vpw) / 100);border-top:calc(.35 * var(--vph) / 100) solid #21262d;font-size:calc(1.9 * var(--vph) / 100);color:#8b949e;
   }
   #estadoConn.mal{color:#ff7b72;font-weight:700}
   #ver{opacity:.55;font-variant-numeric:tabular-nums}
@@ -196,7 +211,7 @@
      matriz. Late despacio para que se note desde lejos sin marear. */
   #cartelVer{
     display:none;flex:0 0 auto;background:#e5001d;color:#fff;text-align:center;
-    font-size:3.2vh;font-weight:800;letter-spacing:.04em;padding:1.4vh 2vw;
+    font-size:calc(3.2 * var(--vph) / 100);font-weight:800;letter-spacing:.04em;padding:calc(1.4 * var(--vph) / 100) calc(2 * var(--vpw) / 100);
     text-transform:uppercase;animation:latir 2.4s ease-in-out infinite;
   }
   #cartelVer.on{display:block}
@@ -482,6 +497,18 @@ const AUTORECARGA   = qs.get('autorecarga') !== '0';
 // y era el equivocado, asi que este numero ya no se toca sin mirar la TV. ?giro=270 la gira
 // para el otro lado y ?giro=0 la deja horizontal, para mirarla desde una PC.
 // Se aplica ya, antes de dibujar, asi pintar() mide la caja correcta.
+// ⚠ La ventana de verdad, en pixeles, para que nada dependa de como el navegador resuelva
+// vh/vw (ver la nota grande del CSS: en la TV, 100vh es la PANTALLA y no la VENTANA, y eso
+// cortaba toda la franja derecha). Se escribe ANTES de dibujar, asi el primer pintar() ya
+// mide la caja correcta, y se rehace si la ventana cambia de tamano.
+function medirVentana(){
+  const r = document.documentElement.style;
+  r.setProperty('--vpw', window.innerWidth  + 'px');
+  r.setProperty('--vph', window.innerHeight + 'px');
+}
+medirVentana();
+addEventListener('resize', medirVentana);
+
 const GIRO = (qs.get('giro') || '90').trim();
 if (GIRO === '90' || GIRO === '270') document.body.className = 'giro giro' + GIRO;
 // ?vista=1: ver desde una PC lo mismo que muestra la TV, pero derecho. Solo tiene sentido
