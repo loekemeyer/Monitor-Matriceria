@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-23.28">
+<meta name="monitor-version" content="2026-09-25.29">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -26,6 +26,16 @@
   body.giro #rot{position:absolute;top:0;left:0;width:100vh;height:100vw;transform-origin:top left}
   body.giro90  #rot{transform:translateX(100vw) rotate(90deg)}
   body.giro270 #rot{transform:translateY(100vh) rotate(-90deg)}
+  /* ?vista=1: LUPA para mirar desde una PC como queda la TV ya enderezada. NO es un modo
+     de la TV. La clave es que NO toca la geometria: #rot sigue siendo 100vh x 100vw y los
+     vw/vh de todo el resto se siguen calculando contra la MISMA ventana, asi que el layout
+     y el tamano de letra salen IDENTICOS a los de ?giro=90. Lo unico que cambia es el
+     transform: en vez de rotar, achica para que la caja parada entre en la ventana acostada
+     y la centra. Va DESPUES de las dos de arriba a proposito -misma especificidad, gana la
+     ultima- y pintar() no se entera, porque mide con offset*/client*, que el transform no toca. */
+  body.vista{background:#010409}
+  body.vista #rot{top:50%;left:50%;transform-origin:center center;
+    transform:translate(-50%,-50%) scale(var(--esc,1))}
   header{
     display:flex;align-items:center;justify-content:space-between;
     padding:1.6vh 2vw;border-bottom:.35vh solid #21262d;gap:2vw;flex:0 0 auto;
@@ -449,6 +459,17 @@ const AUTORECARGA   = qs.get('autorecarga') !== '0';
 // Se aplica ya, antes de dibujar, asi pintar() mide la caja correcta.
 const GIRO = (qs.get('giro') || '90').trim();
 if (GIRO === '90' || GIRO === '270') document.body.className = 'giro giro' + GIRO;
+// ?vista=1: ver desde una PC lo mismo que muestra la TV, pero derecho. Solo tiene sentido
+// con giro; sin giro la pagina ya se lee derecha. La escala es la que hace entrar la caja
+// parada (alto x ancho de ventana) en la ventana acostada: a 962x485 da 0,504.
+const VISTA = qs.get('vista') === '1';
+if (VISTA && GIRO !== '0') {
+  document.body.classList.add('vista');
+  const escalar = () => document.documentElement.style.setProperty('--esc',
+    Math.min(innerWidth / innerHeight, innerHeight / innerWidth).toFixed(4));
+  escalar();
+  addEventListener('resize', escalar);
+}
 let   avisoVersion  = false;
 
 function mostrarCartel(txt){

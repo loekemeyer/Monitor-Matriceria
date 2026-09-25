@@ -124,11 +124,25 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
     colgaron, el aparato no lo reporta. · **`?giro=270`** la gira para el otro lado ·
     **`?giro=0`** la deja horizontal, que es como conviene mirarla desde una PC.
   - **Girada NO entra la tabla de seis columnas.** Medido: el área pasa de 924×396 a
-    **447×828 px** y la letra caía a **10,2 px**, ilegible desde el taller. Por eso en
+    **446,5×838,5 px** y la letra caía a **10,2 px**, ilegible desde el taller. Por eso en
     vertical cada matriz ocupa **dos renglones y no hay encabezado** — que es literalmente
     "una lista a lo largo": arriba puesto · descripción · chip de estado, abajo fecha ·
     problema · qué espera. El alto sobra, así que gastarlo en un segundo renglón sale gratis:
     **18,6 px de letra contra los 16,5 de la horizontal**.
+  - **Para mirarlo desde una PC hay `?vista=1`** (Elías, 25/09/2026: *"¿hay forma de girarlo
+    para verlo como se estaría viendo la TV?"*). Girada, el navegador muestra el texto de
+    costado —que es correcto: así sale el video, y la TV está colgada de costado— pero es
+    ilegible en el monitor de un escritorio. `?giro=90&vista=1` lo endereza. **Lo importante
+    es lo que NO cambia**: `#rot` sigue siendo `100vh × 100vw` y todos los `vw`/`vh` se
+    siguen calculando contra la misma ventana, así que el layout y el tamaño de letra salen
+    **idénticos** a los de la TV (verificado: `#rot` 485×962, tabla 447×695, letra 18,59 px
+    en los dos). Lo único que se reemplaza es el `transform`: en vez de rotar, achica para
+    que la caja parada entre en la ventana acostada (a 962×485 la escala es **0,504**) y la
+    centra. **Es una lupa para mirar, no un modo de la TV** — la TV no lo usa nunca.
+    Con `?giro=0` se ignora, porque sin giro la página ya se lee derecha.
+    ⚠ La regla CSS de `.vista` va **después** de las de `giro90`/`giro270`: tienen la misma
+    especificidad, así que lo que decide es el orden. Si alguien la mueve arriba, deja de
+    funcionar sin tirar ningún error.
   - ⚠ **`getBoundingClientRect()` MIENTE con la pantalla girada**: devuelve la caja alineada a
     la pantalla, o sea con el ancho y el alto **cambiados de lugar**. La segunda pasada de
     `pintar()` hacía la corrección con los números al revés y dejaba la letra en 13,2 px por
@@ -193,6 +207,7 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
 | `res` | 0 | `res=1` muestra el lector de resolución (apagado por defecto) |
 | `autorecarga` | 1 | `autorecarga=0` deja el cartel rojo pero no recarga sola |
 | `giro` | 90 | Giro de la pantalla: `90` (la TV del taller, confirmado), `270` (al revés), `0` (horizontal) |
+| `vista` | 0 | `vista=1` endereza la pantalla girada para mirarla desde una PC (misma letra y mismo layout, achicado para entrar). No lo usa la TV |
 
 La grilla ya no se elige a mano: el cuadro ocupa lo que necesita y se centra.
 
