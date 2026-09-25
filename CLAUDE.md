@@ -158,6 +158,33 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   Ver Damián · `esperando` → Esperando · `terminada` → Terminada (no se muestra). Agregar uno
   toca CUATRO lugares: el `check` de `planify.matrices_ingresos`, la RPC
   `planify_matriz_estado`, la lista `MAT_ESTADOS` de Planify y el objeto `ESTADOS` de acá.
+- ⚠⚠ **EN ESTE ARCHIVO NO SE ESCRIBE `gap`. El navegador de la TV no lo soporta.**
+  El aparato tipo Roku del taller **descarta el `gap` de flexbox en silencio** — sin error y
+  sin fallback: las cosas quedan **pegadas**. En la foto del 25/09/2026 se leía
+  `MATRICERIA12 matrices`, `7Bombilla nueva` y `23/09Reponer manoplas`, y en Chrome de una PC
+  se veía perfecto, que es por lo que tardó en encontrarse. **Reproducido**: sirviendo el
+  `index.html` real con el `gap` neutralizado, las tres separaciones dan **0 px**; con
+  `margin` dan **9 / 8 / 13 px**, y en Chrome normal el resultado es **idéntico** (el total es
+  el mismo, `.55em × (n−1)` de un lado o del otro, así que ningún ancho medido cambia).
+  Para separar va **`> * + *` con `margin`**, nunca `gap`. Hoy el archivo tiene **cero**.
+- ⚠ **El chip de estado no se achica nunca** (`flex:0 0 auto` en `.c-estado i, .lista .l1 i`)
+  y la descripción de la lista tiene un tope (`max-width:calc(100% - 9em)` en `.lista .l1 .d`).
+  **Honestidad sobre estos dos frenos**: el corte que se vio en la TV (`INGRESAI`, `PROCES`,
+  `ESPERANI`) **NO se pudo reproducir en Chromium** — acá la descripción cede primero y el
+  chip sale entero siempre, medido con los textos de hoy y con descripciones largas a
+  propósito (**0 de 12 cortados en los cuatro casos**). O sea que **no son un arreglo
+  comprobado**: son el único mecanismo capaz de producir ese corte (el chip era un item
+  flexible más, y si el navegador no respeta el `min-width:0` de la descripción, ésta empuja
+  al chip fuera del renglón y el `overflow:hidden` de `.fila` se lo come). **Hay que mirar la
+  TV con la 2026-09-25.30 para saber si alcanzó.**
+- ⚠ **La letra de la lista está topeada por el ANCHO, no por el alto.** Medido a 962×485 con
+  las 12 matrices: área útil 447 × 838, tabla 447 × 695, letra **18,6 px**; sobra ×0,999 a lo
+  ancho y ×1,206 a lo alto. O sea que **los ~143 px que sobran abajo NO se pueden convertir en
+  letra más grande**: al primer píxel que crezca, no entra a lo ancho. Si alguna vez hace falta
+  más letra, hay que acortar los textos (más abreviaturas) o mandar el problema a un tercer
+  renglón — subir la constante `EM_ITEM` no sirve. Y la segunda pasada de `pintar()` **sólo
+  achica** (`if (sobra < 1)`), a propósito: dejarla crecer puede partir un texto en dos líneas,
+  volver a no entrar y terminar cortando el último renglón en una pantalla que no vemos.
 - ⚠ **`<meta name="monitor-version">` HAY QUE SUBIRLA EN CADA COMMIT que toque
   `index.html`.** La página baja cada 10 minutos el `index.html` publicado en GitHub Pages
   (sin caché), le lee esa meta y la compara con la de la copia que está corriendo. Si no
