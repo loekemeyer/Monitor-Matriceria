@@ -164,9 +164,17 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   `MATRICERIA12 matrices`, `7Bombilla nueva` y `23/09Reponer manoplas`, y en Chrome de una PC
   se veía perfecto, que es por lo que tardó en encontrarse. **Reproducido**: sirviendo el
   `index.html` real con el `gap` neutralizado, las tres separaciones dan **0 px**; con
-  `margin` dan **9 / 8 / 13 px**, y en Chrome normal el resultado es **idéntico** (el total es
+  `margin` dan **11 / 11 / 13 px**, y en Chrome normal el resultado es **idéntico** (el total es
   el mismo, `.55em × (n−1)` de un lado o del otro, así que ningún ancho medido cambia).
-  Para separar va **`> * + *` con `margin`**, nunca `gap`. Hoy el archivo tiene **cero**.
+  Para separar va **`> * + *` con `margin`**, nunca `gap`. Hoy el archivo no tiene ninguno (el único `gap:` que queda es la palabra dentro de ese comentario).
+- ⚠ **Choque de sesiones en paralelo, 25/09/2026.** Este arreglo lo hicieron **dos sesiones a
+  la vez**, con el mismo diagnóstico y **las dos tomaron la versión `2026-09-25.30`**. Es el
+  tercer choque de la familia (Planify ya tuvo el 1.0.48/1.0.49 y el 1.0.67). Se resolvió
+  quedándose con el `index.html` de la que llegó primero (`97f2de6` — su `#` con
+  `min-width:1.5em` alinea mejor los de dos dígitos y su segundo renglón engancha mejor),
+  sumándole el único freno que la otra tenía de más (el `max-width` de `.lista .l1 .d`) y
+  subiendo a **`.31`**, porque la `.30` ya estaba publicada y sin subirla la TV no se entera.
+  **Antes de arrancar un cambio acá, mirar si `origin/main` ya trae uno parecido.**
 - ⚠ **El chip de estado no se achica nunca** (`flex:0 0 auto` en `.c-estado i, .lista .l1 i`)
   y la descripción de la lista tiene un tope (`max-width:calc(100% - 9em)` en `.lista .l1 .d`).
   **Honestidad sobre estos dos frenos**: el corte que se vio en la TV (`INGRESAI`, `PROCES`,

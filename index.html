@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-25.30">
+<meta name="monitor-version" content="2026-09-25.31">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -40,22 +40,15 @@
     display:flex;align-items:center;justify-content:space-between;
     padding:1.6vh 2vw;border-bottom:.35vh solid #21262d;flex:0 0 auto;
   }
-  /* ⚠ SEPARACIONES CON margin, NUNCA CON gap. El navegador de la TV del taller (el aparato
-     tipo Roku) NO soporta el gap de flexbox y lo descarta en silencio: no hay error, no hay
-     fallback, simplemente las cosas quedan PEGADAS. En la foto del 25/09/2026 se leia
-     "MATRICERIA12 matrices", "7Bombilla nueva" y "23/09Reponer manoplas", todo junto, y en
-     Chrome de una PC se ve bien — por eso costo verlo. El margin lo entiende cualquier
-     navegador y, donde el gap funciona, se ve exactamente igual: el total es el mismo
-     (.55em x (n-1) de un lado o del otro), asi que ningun ancho medido cambia.
-     REGLA: en este archivo no se escribe gap. Si haces falta separar, `> * + *` con margin. */
-  header > * + *{margin-left:2vw}
+  /* ⚠ EL NAVEGADOR DE LA TV (aparato tipo Roku) IGNORA 'gap' EN FLEX. Lo descarta sin avisar,
+     así que TODO lo que se separaba con gap queda pegado en la pantalla real: en el título
+     "MATRICERÍA12 matrices", y en cada renglón "1Pastillas manopla" y "23/09Reponer…".
+     Por eso en este archivo la separación NUNCA va con gap: va con margin/padding, que el
+     aparato sí respeta. Si mañana se agrega una columna o un dato, separalo con margin. */
   .titulo{display:flex;align-items:baseline}
-  .titulo > * + *{margin-left:1.4vw}
-  .hdr-der{display:flex;align-items:center}
-  .hdr-der > * + *{margin-left:1.2vw}
   .titulo h1{font-size:4.2vh;letter-spacing:.06em;font-weight:800}
-  .titulo .sub{font-size:2.2vh;color:#8b949e}
-  .reloj{font-size:4.2vh;font-weight:700;font-variant-numeric:tabular-nums}
+  .titulo .sub{font-size:2.2vh;color:#8b949e;margin-left:1.4vw}
+  .reloj{font-size:4.2vh;font-weight:700;font-variant-numeric:tabular-nums;margin-left:1.2vw}
   .reloj .fecha{display:block;font-size:1.8vh;font-weight:400;color:#8b949e;text-align:right}
   /* Lector de resolucion: APAGADO por defecto (en la TV es ruido). Se prende con ?res=1
      cuando hay que averiguar con que medida dibuja una pantalla nueva. */
@@ -95,16 +88,16 @@
   .tabla{display:flex;flex-direction:column;font-size:var(--fs,16px);width:auto;max-width:100%}
   .tabla.lista{width:100%}
   .th{display:flex;align-items:flex-end;padding:0 .9em .3em}
-  .th > * + *{margin-left:.55em}
   .th span{font-size:1.14em;color:#8b949e;line-height:1;white-space:nowrap;text-align:center}
   .fila{
     display:flex;align-items:center;padding:.3em .9em;margin-bottom:.16em;
     background:#161b22;border-radius:.35em;position:relative;overflow:hidden;
   }
   .fila:last-child{margin-bottom:0}
-  /* Solo en la tabla: en modo lista la .fila es display:block y sus hijos son l1/l2,
-     que se separan solos con margin-top. Un margin-left aca los correria de gancho. */
-  .tabla:not(.lista) .fila > * + *{margin-left:.55em}
+  /* Separación entre columnas por MARGIN (la TV ignora gap, ver nota de arriba). Sólo en la
+     tabla horizontal; en la lista vertical no hay columnas. */
+  .tabla:not(.lista) .fila>*:not(:first-child),
+  .th>*:not(:first-child){margin-left:.55em}
   .fila::before{content:'';position:absolute;left:0;top:0;bottom:0;width:.28em;background:var(--c,#58a6ff)}
   /* TODO EL TEXTO DEL RENGLON VA EN BLANCO Y SIN NEGRITA (Elias, 23/09/2026: "ese cambio de
      texto hacelo a desc ing # problema y espera, sin el bold"). Las clases .aviso y .alerta
@@ -123,15 +116,6 @@
     font-style:normal;display:inline-block;padding:.12em .7em;border-radius:99px;
     font-size:.8em;font-weight:800;text-transform:uppercase;letter-spacing:.04em;
     background:var(--cb,#1f3350);color:var(--c,#58a6ff);white-space:nowrap;
-    /* ⚠ flex:0 0 auto = el chip NO se achica nunca; el que cede es el texto de al lado.
-       HONESTIDAD SOBRE ESTE FRENO: el corte de los chips en la TV ("INGRESAI", "PROCES",
-       "ESPERANI" en la foto del 25/09/2026) NO se pudo reproducir en Chromium — aca la
-       descripcion se achica primero y el chip sale entero siempre, con textos de hoy y con
-       descripciones largas a proposito (medido, 0 de 12 cortados en los cuatro casos). O
-       sea que esto NO es un arreglo comprobado: es el unico mecanismo que podia producir
-       ese corte y se lo saca de encima. La otra mitad del mismo freno esta en .lista .l1 .d.
-       Hay que MIRAR LA TV con esta version para saber si alcanzo. */
-    flex:0 0 auto;
   }
   .c-prio, .c-fecha, .c-desc, .c-estado, .c-prob, .c-espera{display:flex;align-items:center;justify-content:center;min-width:0}
   /* La prioridad es el orden en que hay que atacarlas: la elige Planify, aca solo se muestra. */
@@ -168,39 +152,42 @@
      literalmente lo que pidio Elias, "una lista a lo largo". El alto sobra (828 px), asi que
      gastarlo en un segundo renglon es gratis y el ancho deja de ser el que manda:
      medido, 19,4 px de letra contra los 16,5 de la horizontal. */
-  .lista .fila{display:block;padding:.34em .8em}
+  .lista .fila{display:block;padding:.4em .8em}
   .lista .l1{display:flex;align-items:center}
-  .lista .l1 > * + *{margin-left:.5em}
-  .lista .l1 .n{font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:1.2em;text-align:right}
-  /* El max-width es el freno que NO depende de que el navegador sepa achicar un item de
-     flex. Si la TV ignora el min-width:0 -y entonces .d se niega a bajar de su ancho de
-     contenido- la descripcion empujaba al chip fuera del renglon y el overflow:hidden de
-     .fila se lo comia. Con el tope, .d no puede pasar de ahi ni queriendo, asi que al chip
-     le queda su lugar pase lo que pase. En Chromium no cambia nada (medido): con los textos
-     de hoy .d nunca llega al tope. */
-  .lista .l1 .d{flex:1 1 auto;min-width:0;max-width:calc(100% - 9em);
-                white-space:normal;overflow:hidden;
+  .lista .l1 .n{font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:1.5em;text-align:right;margin-right:.6em}
+  /* El max-width es el segundo freno del chip, y el que NO depende de que el navegador
+     sepa achicar un item de flex. Si la TV ignora el min-width:0 -y entonces .d se niega a
+     bajar de su ancho de contenido- la descripcion empuja al chip fuera del renglon y el
+     overflow:hidden de .fila se lo come; con el tope no puede pasar de ahi ni queriendo.
+     En Chromium no cambia nada (medido): con los textos de hoy .d nunca llega al tope.
+     ⚠ HONESTIDAD: el corte de los chips en la TV (INGRESAI, PROCES, ESPERANI) NO se pudo
+     reproducir aca -la descripcion cede primero y el chip sale entero siempre, 0 de 12
+     cortados con textos de hoy y con descripciones largas a proposito-, asi que esto y el
+     flex:0 0 auto de .lista .l1 i son el unico mecanismo capaz de producirlo, no un arreglo
+     comprobado. Hay que MIRAR LA TV para saber si alcanzo. */
+  .lista .l1 .d{flex:1 1 auto;min-width:0;max-width:calc(100% - 9em);margin-right:.6em;white-space:normal;overflow:hidden;
                 display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-  .lista .l2{display:flex;align-items:baseline;font-size:.84em;margin-top:.1em;padding-left:1.7em}
-  .lista .l2 > * + *{margin-left:.5em}
-  /* La fecha tampoco se achica: es corta y si cede queda partida en dos renglones. */
-  .lista .l2 .f{flex:0 0 auto;white-space:nowrap}
+  /* El chip de estado NO se achica NI se corta: flex 0 0 auto. Antes era achicable y, como su
+     texto es nowrap, se salía del renglón y lo clipeaba el borde de la pantalla — de ahí
+     "INGRESAI", "PROCES", "ESPERANI". La descripción, que SÍ se puede achicar, le cede el
+     lugar y clampa a dos líneas; el estado se lee siempre entero. */
+  .lista .l1 i{flex:0 0 auto}
+  .lista .l2{display:flex;align-items:baseline;font-size:.84em;margin-top:.16em;padding-left:2.1em}
+  .lista .l2 .f{flex:0 0 auto;margin-right:.7em;font-variant-numeric:tabular-nums}
   .lista .l2 .p{flex:1 1 auto;min-width:0;white-space:normal;overflow:hidden;
                 display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
-  .lista .l2 .e{flex:0 0 auto;white-space:nowrap;max-width:10em;overflow:hidden;text-overflow:ellipsis}
+  .lista .l2 .e{flex:0 0 auto;margin-left:.6em;white-space:nowrap;max-width:10em;overflow:hidden;text-overflow:ellipsis}
 
   .vacio{
     flex:1 1 100%;display:flex;align-items:center;justify-content:center;
     flex-direction:column;color:#8b949e;font-size:4vh;text-align:center;
   }
-  .vacio > * + *{margin-top:2vh}
-  .vacio .emoji{font-size:9vh}
+  .vacio .emoji{font-size:9vh;margin-bottom:2vh}
 
   footer{
     flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
     padding:1.1vh 2vw;border-top:.35vh solid #21262d;font-size:1.9vh;color:#8b949e;
   }
-  footer > * + *{margin-left:2vw}
   #estadoConn.mal{color:#ff7b72;font-weight:700}
   #ver{opacity:.55;font-variant-numeric:tabular-nums}
 
@@ -229,7 +216,7 @@
       <h1>🛠️ MATRICERÍA</h1>
       <span class="sub" id="resumen">cargando…</span>
     </div>
-    <div class="hdr-der">
+    <div style="display:flex;align-items:center">
       <div class="res" id="res"></div>
       <div class="reloj"><span id="hora">--:--</span><span class="fecha" id="fecha"></span></div>
     </div>
