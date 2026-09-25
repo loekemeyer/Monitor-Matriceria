@@ -175,16 +175,28 @@ la consola del navegador en la TV, no puede escribir ni borrar una matriz.
   sumándole el único freno que la otra tenía de más (el `max-width` de `.lista .l1 .d`) y
   subiendo a **`.31`**, porque la `.30` ya estaba publicada y sin subirla la TV no se entera.
   **Antes de arrancar un cambio acá, mirar si `origin/main` ya trae uno parecido.**
-- ⚠ **El chip de estado no se achica nunca** (`flex:0 0 auto` en `.c-estado i, .lista .l1 i`)
-  y la descripción de la lista tiene un tope (`max-width:calc(100% - 9em)` en `.lista .l1 .d`).
-  **Honestidad sobre estos dos frenos**: el corte que se vio en la TV (`INGRESAI`, `PROCES`,
-  `ESPERANI`) **NO se pudo reproducir en Chromium** — acá la descripción cede primero y el
-  chip sale entero siempre, medido con los textos de hoy y con descripciones largas a
-  propósito (**0 de 12 cortados en los cuatro casos**). O sea que **no son un arreglo
-  comprobado**: son el único mecanismo capaz de producir ese corte (el chip era un item
-  flexible más, y si el navegador no respeta el `min-width:0` de la descripción, ésta empuja
-  al chip fuera del renglón y el `overflow:hidden` de `.fila` se lo come). **Hay que mirar la
-  TV con la 2026-09-25.30 para saber si alcanzó.**
+- ⚠⚠ **`100vh` EN LA TV ES LA PANTALLA, NO LA VENTANA. Por eso se cortaba toda la franja
+  derecha.** El aparato tipo Roku **no descuenta su propia barra de direcciones** al resolver
+  `vh`: informa ventana **962 × 485** e `innerHeight` 485, pero `100vh` le vale **541**, que es
+  `screen.height`. Como `#rot` se armaba con `width:100vh`, la caja girada quedaba **56 px más
+  ancha de lo visible** y la pantalla cortaba el sobrante.
+  **Reproducido y medido** (emulando ese `100vh` a 962 × 485 con las 12 matrices):
+  el reloj se corta **37 px** — exactamente `septiembre` de "viernes, 25 de septiembre" —,
+  la tabla **37 px** y el chip **3 px**, o sea la última letra (`INGRESAD`, `ESPERAND`).
+  Con la corrección: **0 px** en los tres, y en Chrome el resultado es idéntico al de antes.
+  **Arreglo**: `medirVentana()` escribe `--vpw`/`--vph` con `innerWidth`/`innerHeight` y
+  **todas** las medidas del archivo (33) van por `calc(N * var(--vp?) / 100)`. El `100vw/100vh`
+  del `:root` es sólo el respaldo para el instante previo a que corra el JS.
+  **REGLA: acá no se escribe `vh` ni `vw` directo, igual que no se escribe `gap`.**
+- ⚠ **Lo que NO era.** Antes de encontrar esto se le echó la culpa al chip, y quedó escrito que
+  "el chip era un item flexible que la descripción empujaba fuera del renglón". **Era falso**, y
+  el dato que lo delataba ya estaba en la foto: **también se cortaban el reloj y el problema
+  largo de la fila 2, todos en la MISMA línea vertical** — firma de "el contenido es más ancho
+  que la pantalla", no de un chip apretado. Los dos frenos que se pusieron entonces
+  (`flex:0 0 auto` en `.c-estado i, .lista .l1 i` y `max-width:calc(100% - 9em)` en
+  `.lista .l1 .d`) **quedan porque no molestan** —medido, en Chromium no cambian nada— pero
+  **no son los que arreglaron esto**. Moraleja: si se corta algo, mirar **todo** lo que se corta
+  antes de culpar al elemento más llamativo.
 - ⚠ **La letra de la lista está topeada por el ANCHO, no por el alto.** Medido a 962×485 con
   las 12 matrices: área útil 447 × 838, tabla 447 × 695, letra **18,6 px**; sobra ×0,999 a lo
   ancho y ×1,206 a lo alto. O sea que **los ~143 px que sobran abajo NO se pueden convertir en
