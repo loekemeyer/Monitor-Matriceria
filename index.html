@@ -6,7 +6,7 @@
 <!-- VERSION DE LA PAGINA. Se compara con la del index.html publicado en GitHub Pages para
      avisar cuando la TV quedo con una copia vieja en cache. SUBIRLA EN CADA COMMIT que
      toque este archivo: si no se sube, el aviso nunca salta. -->
-<meta name="monitor-version" content="2026-09-25.32">
+<meta name="monitor-version" content="2026-09-25.33">
 <title>Monitor Matricería</title>
 <style>
   /* Pensado para una TV de 32" a 1920×1080 mirada de lejos: fondo oscuro, letra
@@ -167,9 +167,22 @@
      literalmente lo que pidio Elias, "una lista a lo largo". El alto sobra (828 px), asi que
      gastarlo en un segundo renglon es gratis y el ancho deja de ser el que manda:
      medido, 19,4 px de letra contra los 16,5 de la horizontal. */
-  .lista .fila{display:block;padding:.4em .8em}
+  .lista .fila{display:block;padding:.4em .8em .4em .5em}
   .lista .l1{display:flex;align-items:center}
-  .lista .l1 .n{font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:1.5em;text-align:right;margin-right:.6em}
+  /* El numero de orden va en un CIRCULO (Elias, 25/09/2026: "los numeros de orden ponelo un
+     poco mas a la izquierda con un circulo rodeandolo"). Tres cosas a cuidar:
+     1) Borde GRIS y texto blanco, no del color del estado: el unico que lleva color en el
+        renglon es el chip, y un segundo semaforo compite con el. El borde va grueso (.08em)
+        porque a 5 metros una linea fina no se ve.
+     2) Cuadrado exacto (width = height) con line-height:1 y centrado por flex: si se deja que
+        lo estire el texto, con dos digitos sale un ovalo y no un circulo.
+     3) NO puede crecer el alto del renglon: son 12 y la letra sale de repartir el alto entre
+        ellos, asi que cada em de mas se la come la letra. Por eso 1.5em. Si alguien lo
+        agranda, MEDIR de nuevo que la letra siga en 18,59 px. */
+  .lista .l1 .n{flex:0 0 auto;width:1.5em;height:1.5em;
+                display:flex;align-items:center;justify-content:center;
+                border:.08em solid #4a5058;border-radius:50%;
+                font-variant-numeric:tabular-nums;line-height:1;margin-right:.5em}
   /* El max-width es el segundo freno del chip, y el que NO depende de que el navegador
      sepa achicar un item de flex. Si la TV ignora el min-width:0 -y entonces .d se niega a
      bajar de su ancho de contenido- la descripcion empuja al chip fuera del renglon y el
@@ -187,7 +200,10 @@
      "INGRESAI", "PROCES", "ESPERANI". La descripción, que SÍ se puede achicar, le cede el
      lugar y clampa a dos líneas; el estado se lee siempre entero. */
   .lista .l1 i{flex:0 0 auto}
-  .lista .l2{display:flex;align-items:baseline;font-size:.84em;margin-top:.16em;padding-left:2.1em}
+  /* ⚠ El padding va en em de ESTE elemento, que ya viene achicado por su font-size:.84em.
+     Para que la 2da linea arranque justo debajo de la descripcion hacen falta 2em del
+     renglon = 2/.84 = 2.38em de aca. Con 2em quedaba 5 px corrida a la izquierda. */
+  .lista .l2{display:flex;align-items:baseline;font-size:.84em;margin-top:.16em;padding-left:2.38em}
   .lista .l2 .f{flex:0 0 auto;margin-right:.7em;font-variant-numeric:tabular-nums}
   .lista .l2 .p{flex:1 1 auto;min-width:0;white-space:normal;overflow:hidden;
                 display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
